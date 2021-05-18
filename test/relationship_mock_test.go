@@ -351,10 +351,6 @@ func TestFindCommonListFriendController(t *testing.T){
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
 			if tc.inputRequest != nil {
-				// value := map[string]string{"email": tc.inputRequest.RequestFriendLists}
-				
-				//value := map[string][]string{"friends": tc.inputRequest.RequestFriendLists}
-				//jsonValue,_ := json.Marshal(value)
 				jsonValue,_ := json.Marshal(tc.inputRequest)
 				req, err := http.NewRequest("POST","/relationship/common",bytes.NewBuffer(jsonValue))
 				if err != nil{
@@ -420,7 +416,6 @@ func TestBeSubcriberController(t *testing.T){
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
 			if tc.inputRequest != nil {
-				// value := map[string]string{"email": tc.inputRequest.RequestFriendLists}
 				jsonValue,_ := json.Marshal(tc.inputRequest)
 				req, err := http.NewRequest("POST","/relationship/update",bytes.NewBuffer(jsonValue))
 				if err != nil{
@@ -486,7 +481,6 @@ func TestToBlockController(t *testing.T){
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
 			if tc.inputRequest != nil {
-				// value := map[string]string{"email": tc.inputRequest.RequestFriendLists}
 				jsonValue,_ := json.Marshal(tc.inputRequest)
 				req, err := http.NewRequest("POST","/relationship/block",bytes.NewBuffer(jsonValue))
 				if err != nil{
@@ -552,7 +546,6 @@ func TestRetrieveUpdateController(t *testing.T){
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
 			if tc.inputRequest != nil {
-				// value := map[string]string{"email": tc.inputRequest.RequestFriendLists}
 				jsonValue,_ := json.Marshal(tc.inputRequest)
 				req, err := http.NewRequest("POST","/relationship/retrieve",bytes.NewBuffer(jsonValue))
 				if err != nil{

@@ -9,16 +9,6 @@ import (
 	r_Request "Friend_management/models/request"
 	"github.com/stretchr/testify/assert"
 )
-
-// contr "Friend_management/controller"
-// "Friend_management/models"
-// "Friend_management/repository"
-// // "errors"
-// "testing"
-
-// "strconv"
-
-// "github.com/stretchr/testify/assert"
 func TestGetAllRelationship(t *testing.T){
 	CreateConnection()
 

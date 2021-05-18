@@ -2,7 +2,6 @@ package models
 
 import (
 	"net/http" 
-	// "fmt"
 )
 
 type RequestEmail struct{
@@ -20,9 +19,3 @@ func (u *RequestFriendLists) Bind(r *http.Request) error{
 func (u *RequestFriendLists) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
-// func (u *RequestFriendLists) Bind(r *http.Request) error {
-// 	if u.RequestFriendLists[0] == ""{
-// 		return fmt.Errorf("email is a required field")
-// 	}
-// 	return nil
-// }

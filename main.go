@@ -21,21 +21,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error occurred: %s", err.Error())
 	}
-
-	// dbUser, dbPassword, dbName :=
-	// 	os.Getenv("POSTGRES_USER"),
-	// 	os.Getenv("POSTGRES_PASSWORD"),
-	// 	os.Getenv("POSTGRES_DB")
-	// database, err := db.Initialize(dbUser, dbPassword, dbName)
 	database, err := db.Initialize2()
 	if err != nil {
 		log.Fatalf("Could not set up database: %v", err)
 	}
-	// defer database.Conn.Close()
-	// db2,_ := database.Conn.Begin()
 	httpHandler := controller.NewHandler(database)
-
-	// httpHandler := contr.NewHandler(database)
 	server := &http.Server{
 		Handler: httpHandler,
 	}

@@ -1,15 +1,11 @@
 package controller
 
 import (
-	// "context"
-	// "fmt"
-	// "errors"
 	"fmt"
 	"net/http"
 
-	// "strconv"
 	r_Response "Friend_management/models/response"
-	"regexp"
+	
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
@@ -45,14 +41,6 @@ func Users(router chi.Router) {
 	router.Post("/",NewUserControl(x).CreateUser)
 	router.Get("/find", NewUserControl(x).GetUser)
 	router.Delete("/delete", NewUserControl(x).DeleteUser)
-	// router.Post("/", CreateUser)
-	// router.Get("/find", GetUser)
-	// router.Delete("/delete", DeleteUser)
-	// router.Route("/{emailID}", func(router chi.Router) {
-		// router.Use(UserContext)
-		// router.Get("/", GetUser)
-		// router.Delete("/", DeleteUser)
-	// })
 }
 func (*controller)GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := userServices.FindAllUser(DBInstance)
@@ -76,7 +64,7 @@ func (*controller)CreateUser(w http.ResponseWriter, r *http.Request){
 		fmt.Println(err.Error())
 		return
 	}
-	if !isEmailValid(user.Email){
+	if !repo.IsEmailValid(user.Email){
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "email was wrong")
 		return
 	}
@@ -91,23 +79,11 @@ func (*controller)CreateUser(w http.ResponseWriter, r *http.Request){
 	}
 	DBInstance.Conn.Commit()
 }
-// func UserContext(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
-// 		email := chi.URLParam(r, "emailID")
-// 		if email == "" {
-// 			r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "Email is required")
-// 			return
-// 		}
-// 		fmt.Println("day: ",email)
-// 		ctx := context.WithValue(r.Context(), UserEmailKey, email)
-// 		next.ServeHTTP(w, r.WithContext(ctx))
-// 	})
-// }
 
 func (*controller)GetUser(w http.ResponseWriter, r *http.Request) {
 	// email := r.Context().Value("emailKey").(string)
 	email := r.URL.Query().Get("id")
-	if !isEmailValid(email){
+	if !repo.IsEmailValid(email){
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "email was wrong")
 		return
 	}
@@ -131,7 +107,7 @@ func (*controller)DeleteUser(w http.ResponseWriter, r *http.Request) {
 	x,_ := db.Conn.Begin()
 	DBInstance.Conn = x
 	email := r.URL.Query().Get("id")
-	if !isEmailValid(email){
+	if !repo.IsEmailValid(email){
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "email was wrong")
 		return
 	}
@@ -146,16 +122,4 @@ func (*controller)DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	DBInstance.Conn.Commit()
-}
-
-var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-
-func isEmailValid(e string) bool {
-	if len(e) < 3 && len(e) > 254 {
-		return false
-	}
-	if !emailRegex.MatchString(e) {
-		return false
-	}
-	return true
 }

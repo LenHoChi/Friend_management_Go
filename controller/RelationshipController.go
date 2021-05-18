@@ -1,9 +1,6 @@
 package controller
 
 import (
-	// "context"
-	// "fmt"
-	// "errors"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,11 +8,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 
-	// "Friend_management/db"
-	// "Friend_management/models"
 	r_Request "Friend_management/models/request"
-	// "encoding/json"
-	// "github.com/gin-gonic/gin"
 	"Friend_management/db"
 	"Friend_management/exception"
 	repo "Friend_management/repository"
@@ -57,7 +50,6 @@ func (*controllerRelationship)GetAllRelationships (w http.ResponseWriter, r *htt
 	relationships, err := relationshipService.GetAllRelationship(DBInstance)
 	fmt.Println("loi:",err)
 	if err != nil {
-		// responseWithError(w, http.StatusBadRequest ,err.Error())
 		render.Render(w,r,exception.ServerErrorRenderer(err))
 		return
 	}
@@ -65,8 +57,6 @@ func (*controllerRelationship)GetAllRelationships (w http.ResponseWriter, r *htt
 		render.Render(w,r, exception.ErrorRenderer(err))
 		return
 	}
-	//DBInstance.Conn.Commit()
-	// DBInstance.Conn.Rollback()
 }
 // {"friends":["1","2"]}
 func (*controllerRelationship)MakeFriend(w http.ResponseWriter, r *http.Request){
@@ -78,7 +68,7 @@ func (*controllerRelationship)MakeFriend(w http.ResponseWriter, r *http.Request)
 	userEmail := requestAddFriend.RequestFriendLists[0]
 	friendEmail := requestAddFriend.RequestFriendLists[1]
 	//check valid for two emails
-	if !isEmailValid(userEmail)||!isEmailValid(friendEmail){
+	if !repo.IsEmailValid(userEmail)||!repo.IsEmailValid(friendEmail){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
 		return
 	}
@@ -97,7 +87,7 @@ func (*controllerRelationship)MakeFriend(w http.ResponseWriter, r *http.Request)
 func (*controllerRelationship)FindListFriend(w http.ResponseWriter, r *http.Request){
 	Argument := &r_Request.RequestEmail{}
 	render.Bind(r, Argument)
-	if !isEmailValid(Argument.Email){
+	if !repo.IsEmailValid(Argument.Email){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
 		return
 	}
@@ -116,7 +106,7 @@ func (*controllerRelationship)FindCommonListFriend(w http.ResponseWriter, r *htt
 	rsFriend := &r_Request.RequestFriendLists{}
 	ls := make([]string,0)
 	render.Bind(r, rsFriend)
-	if !isEmailValid(rsFriend.RequestFriendLists[0])||!isEmailValid(rsFriend.RequestFriendLists[1]){
+	if !repo.IsEmailValid(rsFriend.RequestFriendLists[0])||!repo.IsEmailValid(rsFriend.RequestFriendLists[1]){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
 		return
 	}
@@ -137,7 +127,7 @@ func (*controllerRelationship)BeSubcriber(w http.ResponseWriter, r *http.Request
 	DBInstance.Conn = x
 	Argument := &r_Request.RequestUpdate{}
 	render.Bind(r, Argument)
-	if !isEmailValid(Argument.Requestor)||!isEmailValid(Argument.Target){
+	if !repo.IsEmailValid(Argument.Requestor)||!repo.IsEmailValid(Argument.Target){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
 		return
 	}
@@ -157,7 +147,7 @@ func (*controllerRelationship)ToBLock(w http.ResponseWriter, r *http.Request){
 	DBInstance.Conn = x
 	Argument := &r_Request.RequestUpdate{}
 	render.Bind(r, Argument)
-	if !isEmailValid(Argument.Requestor)||!isEmailValid(Argument.Target){
+	if !repo.IsEmailValid(Argument.Requestor)||!repo.IsEmailValid(Argument.Target){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
 		return
 	}
@@ -176,7 +166,7 @@ func (*controllerRelationship)ToBLock(w http.ResponseWriter, r *http.Request){
 func (*controllerRelationship)RetrieveUpdate(w http.ResponseWriter, r *http.Request){
 	Argument := &r_Request.RetrieveUpdate{}
 	render.Bind(r, Argument)
-	if !isEmailValid(Argument.Sender){
+	if !repo.IsEmailValid(Argument.Sender){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
 		return
 	}

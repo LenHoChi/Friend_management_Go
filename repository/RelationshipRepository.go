@@ -49,9 +49,6 @@ func (r *repoRelationship)GetAllRelationship(database db.Database) (*models.Rela
 
 func (r *repoRelationship)FindRelationshipByKey(database db.Database, userEmail string, friendEmail string) (models.Relationship, error) {
 	relationship := models.Relationship{}
-	// if !isEmailValid(userEmail)&&!isEmailValid(friendEmail){
-	// 	return relationship, errors.New("email is wrong")
-	// }
 	query := `select * from relationship where user_email=$1 and friend_email=$2`
 	errFind := database.Conn.QueryRow(query, userEmail, friendEmail).Scan(&relationship.UserEmail, &relationship.FriendEmail, &relationship.AreFriend, &relationship.IsSubcriber, &relationship.IsBlock)
 	if errFind != nil {
@@ -62,27 +59,11 @@ func (r *repoRelationship)FindRelationshipByKey(database db.Database, userEmail 
 	}
 	return relationship, nil
 }
-// func (r *repoRelationship)CheckRelationshipSimilar(database db.Database, userEmail string, friendEmail string) bool {
-// 	list, _ := r.GetAllRelationship(database)
-// 	for _, i := range list.Relationships {
-// 		if i.UserEmail == userEmail && i.FriendEmail == friendEmail {
-// 			return false
-// 		}
-// 	}
-// 	return true
-// }
 func (r *repoRelationship)AddRelationship(database db.Database, userEmail string, friendEmail string) (*r_Response.ResponseSuccess, error) {
-	//
-	// if !isEmailValid(userEmail)||!isEmailValid(friendEmail){
-	// 	return nil, errors.New("email is wrong")
-	// }
-
 	//check email similar
 	if userEmail == friendEmail {
 		return nil, errors.New("error cause 2 emails are same")
 	}
-	// _, errFindUser1 := GetUserByEmail(database, userEmail)
-	// _, errFindUser2 := GetUserByEmail(database, friendEmail)
 	_, errFindUser1 := NewRepo().GetUserByEmail(database, userEmail)
 	_, errFindUser2 := NewRepo().GetUserByEmail(database, friendEmail)
 	if errFindUser1 != nil || errFindUser2 != nil {
@@ -112,9 +93,6 @@ func (r *repoRelationship)AddRelationship(database db.Database, userEmail string
 }
 
 func (r *repoRelationship)FindListFriend(database db.Database, email string) (*r_Response.ResponseListFriend, error) {
-	// if !isEmailValid(email){
-	// 	return nil, errors.New("email is wrong")
-	// }
 	//check emai exists
 	_, errFindUser := NewRepo().GetUserByEmail(database, email)
 	if errFindUser != nil {
@@ -144,9 +122,6 @@ func (r *repoRelationship)FindListFriend(database db.Database, email string) (*r
 }
 
 func (r *repoRelationship)FindCommonListFriend(database db.Database, lstEmail []string) (*r_Response.ResponseListFriend, error) {
-	// if !isEmailValid(lstEmail[0])||!isEmailValid(lstEmail[1]){
-	// 	return nil, errors.New("email is wrong")
-	// }
 	list := &r_Response.ResponseListFriend{}
 	//check same email
 	if lstEmail[0] == lstEmail[1] {
@@ -181,9 +156,6 @@ func (r *repoRelationship)FindCommonListFriend(database db.Database, lstEmail []
 }
 
 func (r *repoRelationship)BeSubcribe(database db.Database, requestor string, target string) (*r_Response.ResponseSuccess, error) {
-	// if !isEmailValid(requestor)||!isEmailValid(target){
-	// 	return nil, errors.New("email is wrong")
-	// }
 	//check case have already this relationship but issbucriber is not -->transfer--> true
 	queryUpdate := `update relationship set issubcriber =true where user_email =$1 and friend_email =$2`
 	queryInsert := `INSERT INTO relationship values ($1, $2, $3, $4, $5)`
@@ -215,9 +187,6 @@ func (r *repoRelationship)BeSubcribe(database db.Database, requestor string, tar
 }
 
 func (r *repoRelationship)ToBlock(database db.Database, requestor string, target string) (*r_Response.ResponseSuccess, error) {
-	// if !isEmailValid(requestor)||!isEmailValid(target){
-	// 	return nil, errors.New("email is wrong")
-	// }
 	queryInsert := `INSERT INTO relationship values ($1, $2, $3, $4, $5)`
 	queryUpdate := `update relationship set issubcriber =false where user_email=$1 and friend_email=$2`
 	queryUpdateBlock := `update relationship set issubcriber =false , isblock=true where user_email=$1 and friend_email=$2`
@@ -275,7 +244,7 @@ func (r *repoRelationship)RetrieveUpdate(database db.Database, sender string, ta
 	}
 	lstTemp := CheckString(target)
 	for _, i := range lstTemp {
-		if isEmailValid(i) {
+		if IsEmailValid(i) {
 			list.Recipients = append(list.Recipients, i)
 		}
 	}
@@ -299,7 +268,7 @@ func CheckContain(str string) bool {
 
 var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
-func isEmailValid(e string) bool {
+func IsEmailValid(e string) bool {
 	if len(e) < 3 && len(e) > 254 {
 		return false
 	}

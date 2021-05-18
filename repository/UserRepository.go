@@ -4,10 +4,6 @@ import (
 	"Friend_management/models"
 	"database/sql"
 	"errors"
-
-	// "fmt"
-
-	// "fmt"
 	"Friend_management/db"
 )
 type repo struct{
@@ -44,11 +40,6 @@ func ClearTable (database db.Database){
 func (r *repo)AddUser(database db.Database, user *models.User) error {
 
 	query := `INSERT INTO users (email) VALUES ($1)`
-	// err := database.Conn.QueryRow(query, user.Email)
-	// if err != nil {
-	// 	return fmt.Errorf("have problem while insert")
-	// }
-	// return nil
 	_, errFind := r.GetUserByEmail(database, user.Email)
 	if errFind == nil {
 		return errors.New("this email exists already")

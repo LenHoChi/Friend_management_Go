@@ -114,14 +114,9 @@ func CreateConnection() {
 		log.Fatalf("Error occurred: %s", err.Error())
 	}
 	database, err := db.Initialize2()
-	// out : Conn &*sql.DB
 	if err != nil {
 		log.Fatalf("Could not set up database: %v", err)
 	}
-	// defer database.Conn.Close()
-	//input : Conn &*sql.Tx
-	// db2,_ := database.Conn.Begin()
-	// httpHandler := contr.NewHandler2(db2)
 	httpHandler := contr.NewHandler(database)
 	server := &http.Server{
 		Handler: httpHandler,

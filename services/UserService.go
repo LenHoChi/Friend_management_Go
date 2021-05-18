@@ -3,14 +3,6 @@ package services
 import (
 	"Friend_management/models"
 	"Friend_management/repository"
-	// "database/sql"
-
-	// "database/sql"
-	// "errors"
-
-	// "fmt"
-
-	// "fmt"
 	"Friend_management/db"
 )
 type reposervices struct{}

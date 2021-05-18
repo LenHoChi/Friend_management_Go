@@ -13,7 +13,6 @@ var(
 type RepositoryService interface{
 	GetAllRelationship(database db.Database) (*models.RelationshipList, error)
 	FindRelationshipByKey(database db.Database, userEmail string, friendEmail string) (models.Relationship, error)
-	// CheckRelationshipSimilar(database db.Database, userEmail string, friendEmail string) bool
 	AddRelationship(database db.Database, userEmail string, friendEmail string) (*r_Response.ResponseSuccess, error)
 	FindListFriend(database db.Database, email string) (*r_Response.ResponseListFriend, error)
 	FindCommonListFriend(database db.Database, lstEmail []string) (*r_Response.ResponseListFriend, error)
@@ -32,9 +31,6 @@ func (r *relationshipServices)GetAllRelationship(database db.Database) (*models.
 func (r *relationshipServices)FindRelationshipByKey(database db.Database, userEmail string, friendEmail string) (models.Relationship, error) {
 	return repoS.FindRelationshipByKey(database, userEmail, friendEmail)
 }
-// func (r *relationshipServices)CheckRelationshipSimilar(database db.Database, userEmail string, friendEmail string) bool {
-// 	return repoS.CheckRelationshipSimilar(database, userEmail, friendEmail)
-// }
 func (r *relationshipServices)AddRelationship(database db.Database, userEmail string, friendEmail string) (*r_Response.ResponseSuccess, error) {
 	return repoS.AddRelationship(database, userEmail, friendEmail)
 }

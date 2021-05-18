@@ -13,10 +13,6 @@ type ResponseRenderError struct{
 	StatusText string `json:"status_text"`
 	Message string `json:"message"`
 }
-// func (e *ResponseError) Error() string{
-// 	return fmt.Sprintf("%s", e.Description)
-// }
-
 func ResponseWithJSON(response http.ResponseWriter, statusCode int, data interface{}){
 	result, _ := json.Marshal(data)
 	response.Header().Set("Content-Type", "application/json")

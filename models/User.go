@@ -13,9 +13,6 @@ type UserList struct {
 	Users []User `json:"users"`
 }
 
-// func (*UserList) Render(w http.ResponseWriter, r *http.Request) error {
-// 	return nil
-// }
 func (UserList) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
