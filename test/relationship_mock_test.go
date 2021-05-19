@@ -209,12 +209,15 @@ func TestMakeFriendController(t *testing.T){
 			if tc.inputRequest != nil {
 				jsonValue,_ := json.Marshal(tc.inputRequest)
 				req, err = http.NewRequest("POST","/relationship/make",bytes.NewBuffer(jsonValue))
+				if err != nil{
+					t.Fatal(err)
+				}
 				req.Header.Set("Content-Type","application/json")
 			}else{
 				req, err = http.NewRequest("POST","/relationship/make",nil)
-			}
-			if err != nil{
-				t.Fatal(err)
+				if err != nil{
+					t.Fatal(err)
+				}
 			}
 			w = httptest.NewRecorder()
 			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).MakeFriend)
@@ -296,11 +299,14 @@ func TestFindListFriendController(t *testing.T){
 				jsonValue,_ := json.Marshal(tc.inputRequest)
 				req, err = http.NewRequest("POST","/relationship/list",bytes.NewBuffer(jsonValue))
 				req.Header.Set("Content-Type","application/json")
+				if err != nil{
+					t.Fatal(err)
+				}
 			}else{
 				req, err = http.NewRequest("POST","/relationship/list",nil)
-			}
-			if err != nil{
-				t.Fatal(err)
+				if err != nil{
+					t.Fatal(err)
+				}
 			}
 			w = httptest.NewRecorder()
 			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).FindListFriend)
@@ -407,11 +413,14 @@ func TestFindCommonListFriendController(t *testing.T){
 				jsonValue,_ := json.Marshal(tc.inputRequest)
 				req, err = http.NewRequest("POST","/relationship/common",bytes.NewBuffer(jsonValue))
 				req.Header.Set("Content-Type","application/json")
+				if err != nil{
+					t.Fatal(err)
+				}
 			}else{
 				req, err = http.NewRequest("POST","/relationship/common",nil)
-			}
-			if err != nil{
-				t.Fatal(err)
+				if err != nil{
+					t.Fatal(err)
+				}
 			}
 			w = httptest.NewRecorder()
 			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).FindCommonListFriend)
@@ -489,11 +498,14 @@ func TestBeSubcriberController(t *testing.T){
 				jsonValue,_ := json.Marshal(tc.inputRequest)
 				req, err = http.NewRequest("POST","/relationship/update",bytes.NewBuffer(jsonValue))
 				req.Header.Set("Content-Type","application/json")
+				if err != nil{
+					t.Fatal(err)
+				}
 			}else{
 				req, err = http.NewRequest("POST","/relationship/update",nil)
-			}
-			if err != nil{
-				t.Fatal(err)
+				if err != nil{
+					t.Fatal(err)
+				}
 			}
 			w = httptest.NewRecorder()
 			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).BeSubcriber)
@@ -573,11 +585,14 @@ func TestToBlockController(t *testing.T){
 				jsonValue,_ := json.Marshal(tc.inputRequest)
 				req, err = http.NewRequest("POST","/relationship/block",bytes.NewBuffer(jsonValue))
 				req.Header.Set("Content-Type","application/json")
+				if err != nil{
+					t.Fatal(err)
+				}
 			}else{
 				req, err = http.NewRequest("POST","/relationship/block",nil)
-			}
-			if err != nil{
-				t.Fatal(err)
+				if err != nil{
+					t.Fatal(err)
+				}
 			}
 			w = httptest.NewRecorder()
 			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).ToBLock)
@@ -645,11 +660,14 @@ func TestRetrieveUpdateController(t *testing.T){
 				jsonValue,_ := json.Marshal(tc.inputRequest)
 				req, err = http.NewRequest("POST","/relationship/retrieve",bytes.NewBuffer(jsonValue))
 				req.Header.Set("Content-Type","application/json")
+				if err != nil{
+					t.Fatal(err)
+				}
 			}else{
 				req, err = http.NewRequest("POST","/relationship/retrieve",nil)
-			}
-			if err != nil{
-				t.Fatal(err)
+				if err != nil{
+					t.Fatal(err)
+				}
 			}
 			w = httptest.NewRecorder()
 			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).RetrieveUpdate)

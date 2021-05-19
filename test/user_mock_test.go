@@ -155,26 +155,25 @@ func TestCreateNewUserController(t *testing.T) {
 				servicesUser ser.UserService    = ser.NewUserService(repoUser)
 			)
 			var w *httptest.ResponseRecorder
+			var req *http.Request
+			var err error
 			if tc.inputRequest !=nil{
 				value := map[string]string{"email": tc.inputRequest.Email}
 				jsonValue, _ := json.Marshal(value)
-				req, err := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonValue))
+				req, err = http.NewRequest("POST", "/users", bytes.NewBuffer(jsonValue))
 				if err != nil {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).CreateUser)
-				handler.ServeHTTP(w, req)
 			}else{
-				req, err := http.NewRequest("POST", "/users", nil)
+				req, err = http.NewRequest("POST", "/users", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).CreateUser)
-				handler.ServeHTTP(w, req)
 			}
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewUserControl(servicesUser).CreateUser)
+			handler.ServeHTTP(w, req)
 			if tc.scenario == "Success" {
 				assert.Equal(t, 200, w.Result().StatusCode)
 			} else{
@@ -210,11 +209,11 @@ func TestDeleteUserController(t *testing.T) {
 		{
 			scenario:          "Empty request body",
 			inputRequest:      &models.User{Email: ""},
-			expectedErrorBody: `"email was wrong"`,
+			expectedErrorBody: `"lack email"`,
 		},
 		{
 			scenario:          "Empty request body",
-			expectedErrorBody: `"email was wrong"`,
+			expectedErrorBody: `"lack email"`,
 		},
 	}
 
@@ -233,26 +232,28 @@ func TestDeleteUserController(t *testing.T) {
 				servicesUser ser.UserService    = ser.NewUserService(repoUser)
 			)
 			var w *httptest.ResponseRecorder
+			var req *http.Request
+			var err error
 			if tc.inputRequest != nil{
-				req, err := http.NewRequest("DELETE", "/users/delete", nil)
+				req, err = http.NewRequest("DELETE", "/users/delete", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				q := req.URL.Query()
 				q.Add("id", tc.inputRequest.Email)
 				req.URL.RawQuery = q.Encode()
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).DeleteUser)
-				handler.ServeHTTP(w, req)
 			}else{
-				req, err := http.NewRequest("DELETE", "/users/delete", nil)
+				req, err = http.NewRequest("DELETE", "/users/delete", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).DeleteUser)
-				handler.ServeHTTP(w, req)
 			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewUserControl(servicesUser).DeleteUser)
+			handler.ServeHTTP(w, req)
 			if tc.scenario == "Success" {
 				assert.Equal(t, 200, w.Result().StatusCode)
 			} else{
@@ -288,11 +289,11 @@ func TestGetUserController(t *testing.T) {
 		{
 			scenario:          "Empty request body",
 			inputRequest:      &models.User{Email: ""},
-			expectedErrorBody: `"email was wrong"`,
+			expectedErrorBody: `"lack email"`,
 		},
 		{
 			scenario:          "Empty request body",
-			expectedErrorBody: `"email was wrong"`,
+			expectedErrorBody: `"lack email"`,
 		},
 	}
 
@@ -312,27 +313,26 @@ func TestGetUserController(t *testing.T) {
 			)
 			var w *httptest.ResponseRecorder
 			var Body = &models.User{}
+			var req *http.Request
+			var err error
 			if tc.inputRequest != nil{
-				req, err := http.NewRequest("GET", "/users/find", nil)
+				req, err = http.NewRequest("GET", "/users/find", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				q := req.URL.Query()
 				q.Add("id", tc.inputRequest.Email)
 				req.URL.RawQuery = q.Encode()
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).GetUser)
-				handler.ServeHTTP(w, req)
-				json.Unmarshal(w.Body.Bytes(),&Body)
 			} else {
-				req, err := http.NewRequest("GET", "/users/find", nil)
+				req, err = http.NewRequest("GET", "/users/find", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).GetUser)
-				handler.ServeHTTP(w, req)
 			}
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewUserControl(servicesUser).GetUser)
+			handler.ServeHTTP(w, req)
+			json.Unmarshal(w.Body.Bytes(),&Body)
 			// json.NewDecoder(io.Reader(w.Body)).Decode(&Body)
 			if tc.scenario == "Success" {
 				assert.Equal(t, 200, w.Result().StatusCode)

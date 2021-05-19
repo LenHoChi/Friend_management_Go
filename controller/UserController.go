@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	r_Response "Friend_management/models/response"
-	
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
@@ -82,6 +81,10 @@ func (*controller)CreateUser(w http.ResponseWriter, r *http.Request){
 func (*controller)GetUser(w http.ResponseWriter, r *http.Request) {
 	// email := r.Context().Value("emailKey").(string)
 	email := r.URL.Query().Get("id")
+	if len(email)==0{
+		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "lack email")
+		return
+	}
 	if !repo.IsEmailValid(email){
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "email was wrong")
 		return
@@ -105,6 +108,10 @@ func (*controller)DeleteUser(w http.ResponseWriter, r *http.Request) {
 	x,_ := db.Conn.Begin()
 	DBInstance.Conn = x
 	email := r.URL.Query().Get("id")
+	if len(email)==0{
+		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "lack email")
+		return
+	}
 	if !repo.IsEmailValid(email){
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "email was wrong")
 		return
