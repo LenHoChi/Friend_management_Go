@@ -1,7 +1,6 @@
 package test
 
 import (
-	contr "Friend_management/controller"
 	"Friend_management/db"
 	"Friend_management/models"
 	"Friend_management/repository"
@@ -15,12 +14,14 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"Friend_management/util"
+	"Friend_management/handler"
 )
 
 func TestGetUser(t *testing.T) {
 	CreateConnection()
 	user := &models.User{Email: "hcl@gmail.com"}
-	repository.NewRepo().AddUser(contr.DBInstance, user)
+	repository.NewRepo().AddUser(util.DBInstance, user)
 	testCases := []struct {
 		scenario      string
 		mockInput     models.User
@@ -34,7 +35,7 @@ func TestGetUser(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.scenario, func(t *testing.T) {
-			_, actualRs := repository.NewRepo().GetUserByEmail(contr.DBInstance, tc.mockInput.Email)
+			_, actualRs := repository.NewRepo().GetUserByEmail(util.DBInstance, tc.mockInput.Email)
 			assert.Equal(t, tc.expectedError, actualRs)
 		})
 	}
@@ -44,7 +45,7 @@ func TestDeleteUser(t *testing.T) {
 	//add user
 	user := &models.User{Email: "hcl@gmail.com"}
 	user2 := &models.User{Email: "hcl2@gmail.com"}
-	repository.NewRepo().AddUser(contr.DBInstance, user)
+	repository.NewRepo().AddUser(util.DBInstance, user)
 
 	testCases := []struct {
 		scenario      string
@@ -65,7 +66,7 @@ func TestDeleteUser(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.scenario, func(t *testing.T) {
-			actualRs := repository.NewRepo().DeleteUser(contr.DBInstance, tc.mockInput)
+			actualRs := repository.NewRepo().DeleteUser(util.DBInstance, tc.mockInput)
 			assert.Equal(t, tc.expectedError, actualRs)
 		})
 	}
@@ -97,7 +98,7 @@ func TestCreateNewUser(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.scenario, func(t *testing.T) {
-			actualRs := repository.NewRepo().AddUser(contr.DBInstance, &tc.mockInput)
+			actualRs := repository.NewRepo().AddUser(util.DBInstance, &tc.mockInput)
 			assert.Equal(t, tc.expectedError, actualRs)
 		})
 	}
@@ -105,7 +106,7 @@ func TestCreateNewUser(t *testing.T) {
 func TestGetAllListUsers(t *testing.T) {
 	CreateConnection()
 
-	result, err := repository.NewRepo().GetAllUsers(contr.DBInstance)
+	result, err := repository.NewRepo().GetAllUsers(util.DBInstance)
 	assert.Nil(t, err)
 	assert.NotNil(t, result)
 }
@@ -119,7 +120,7 @@ func CreateConnection() {
 	if err != nil {
 		log.Fatalf("Could not set up database: %v", err)
 	}
-	httpHandler := contr.NewHandler(database)
+	httpHandler := handler.NewHandler(database)
 	server := &http.Server{
 		Handler: httpHandler,
 	}

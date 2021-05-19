@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Friend_management/controller"
+	"Friend_management/handler"
 	"Friend_management/db"
 	"context"
 	"fmt"
@@ -14,7 +14,6 @@ import (
 	"time"
 
 )
-
 func main() {
 	addr := ":8080"
 	listener, err := net.Listen("tcp", addr)
@@ -25,7 +24,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not set up database: %v", err)
 	}
-	httpHandler := controller.NewHandler(database)
+	httpHandler := handler.NewHandler(database)
 	server := &http.Server{
 		Handler: httpHandler,
 	}

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -13,6 +12,7 @@ import (
 	"Friend_management/exception"
 	repo "Friend_management/repository"
 	ser "Friend_management/services"
+	"Friend_management/util"
 )
 
 var RelationshipKey = "relationshipKey"
@@ -47,8 +47,7 @@ func NewRelationshipControl(ser ser.RepositoryService) RelationshipControl{
 	return &controllerRelationship{}
 }
 func (*controllerRelationship)GetAllRelationships (w http.ResponseWriter, r *http.Request) {
-	relationships, err := relationshipService.GetAllRelationship(DBInstance)
-	fmt.Println("loi:",err)
+	relationships, err := relationshipService.GetAllRelationship(util.DBInstance)
 	if err != nil {
 		render.Render(w,r,exception.ServerErrorRenderer(err))
 		return
@@ -61,7 +60,7 @@ func (*controllerRelationship)GetAllRelationships (w http.ResponseWriter, r *htt
 // {"friends":["1","2"]}
 func (*controllerRelationship)MakeFriend(w http.ResponseWriter, r *http.Request){
 	x,_ := db.Conn.Begin()
-	DBInstance.Conn = x
+	util.DBInstance.Conn = x
 	requestAddFriend := &r_Request.RequestFriendLists{}
 	if err := render.Bind(r, requestAddFriend);err != nil{
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("invalid format")))
@@ -83,7 +82,7 @@ func (*controllerRelationship)MakeFriend(w http.ResponseWriter, r *http.Request)
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("error cause 2 emails are same")))
 		return
 	}
-	responseRS, err := relationshipService.AddRelationship(DBInstance, userEmail, friendEmail)
+	responseRS, err := relationshipService.AddRelationship(util.DBInstance, userEmail, friendEmail)
 	if err != nil {
 		render.Render(w,r,exception.ServerErrorRenderer(err))
 		return
@@ -92,7 +91,7 @@ func (*controllerRelationship)MakeFriend(w http.ResponseWriter, r *http.Request)
 		render.Render(w,r, exception.ErrorRenderer(err))
 		return
 	}
-	DBInstance.Conn.Commit()
+	util.DBInstance.Conn.Commit()
 }
 //{"email":"1"}
 func (*controllerRelationship)FindListFriend(w http.ResponseWriter, r *http.Request){
@@ -105,7 +104,7 @@ func (*controllerRelationship)FindListFriend(w http.ResponseWriter, r *http.Requ
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
 		return
 	}
-	responseRS, err := relationshipService.FindListFriend(DBInstance, Argument.Email)
+	responseRS, err := relationshipService.FindListFriend(util.DBInstance, Argument.Email)
 	if err != nil{
 		render.Render(w,r,exception.ServerErrorRenderer(err))
 		return
@@ -136,7 +135,7 @@ func (*controllerRelationship)FindCommonListFriend(w http.ResponseWriter, r *htt
 		return
 	}
 	ls = append(ls, rsFriend.RequestFriendLists[0], rsFriend.RequestFriendLists[1])
-	lst, err := relationshipService.FindCommonListFriend(DBInstance, ls)
+	lst, err := relationshipService.FindCommonListFriend(util.DBInstance, ls)
 	if err != nil {
 		render.Render(w,r,exception.ServerErrorRenderer(err))
 		return
@@ -149,7 +148,7 @@ func (*controllerRelationship)FindCommonListFriend(w http.ResponseWriter, r *htt
 // {"requestor":"len1","target":"len2"}
 func (*controllerRelationship)BeSubcriber(w http.ResponseWriter, r *http.Request){
 	x,_ := db.Conn.Begin()
-	DBInstance.Conn = x
+	util.DBInstance.Conn = x
 	Argument := &r_Request.RequestUpdate{}
 	if err := render.Bind(r, Argument);err != nil{
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("invalid format")))
@@ -163,7 +162,7 @@ func (*controllerRelationship)BeSubcriber(w http.ResponseWriter, r *http.Request
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("error cause 2 emails are same")))
 		return
 	}
-	responseRS, err:= relationshipService.BeSubcribe(DBInstance, Argument.Requestor, Argument.Target)
+	responseRS, err:= relationshipService.BeSubcribe(util.DBInstance, Argument.Requestor, Argument.Target)
 	if err != nil {
 		render.Render(w,r,exception.ServerErrorRenderer(err))
 		return
@@ -172,11 +171,11 @@ func (*controllerRelationship)BeSubcriber(w http.ResponseWriter, r *http.Request
 		render.Render(w,r, exception.ErrorRenderer(err))
 		return
 	}
-	DBInstance.Conn.Commit()
+	util.DBInstance.Conn.Commit()
 }
 func (*controllerRelationship)ToBLock(w http.ResponseWriter, r *http.Request){
 	x,_ := db.Conn.Begin()
-	DBInstance.Conn = x
+	util.DBInstance.Conn = x
 	Argument := &r_Request.RequestUpdate{}
 	if err := render.Bind(r, Argument);err != nil{
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("invalid format")))
@@ -190,7 +189,7 @@ func (*controllerRelationship)ToBLock(w http.ResponseWriter, r *http.Request){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("error cause 2 emails are same")))
 		return
 	}
-	responseRS ,err :=relationshipService.ToBlock(DBInstance, Argument.Requestor, Argument.Target)
+	responseRS ,err :=relationshipService.ToBlock(util.DBInstance, Argument.Requestor, Argument.Target)
 	if err != nil {
 		render.Render(w,r,exception.ServerErrorRenderer(err))
 		return
@@ -199,7 +198,7 @@ func (*controllerRelationship)ToBLock(w http.ResponseWriter, r *http.Request){
 		render.Render(w,r, exception.ErrorRenderer(err))
 		return
 	}
-	DBInstance.Conn.Commit()
+	util.DBInstance.Conn.Commit()
 }
 // {"sender":"len1","target":"len2"}
 func (*controllerRelationship)RetrieveUpdate(w http.ResponseWriter, r *http.Request){
@@ -212,7 +211,7 @@ func (*controllerRelationship)RetrieveUpdate(w http.ResponseWriter, r *http.Requ
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
 		return
 	}
-	responseRS, err := relationshipService.RetrieveUpdate(DBInstance,Argument.Sender, Argument.Tartget)
+	responseRS, err := relationshipService.RetrieveUpdate(util.DBInstance,Argument.Sender, Argument.Tartget)
 	if err != nil {
 		render.Render(w,r,exception.ServerErrorRenderer(err))
 		return

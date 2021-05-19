@@ -1,18 +1,18 @@
 package test
 
 import (
-	"Friend_management/controller"
 	"Friend_management/models"
 	"Friend_management/repository"
 	"errors"
 	"testing"
 	r_Request "Friend_management/models/request"
 	"github.com/stretchr/testify/assert"
+	"Friend_management/util"
 )
 func TestGetAllRelationship(t *testing.T){
 	CreateConnection()
 
-	result, err := repository.NewRepoRelationship().GetAllRelationship(controller.DBInstance)
+	result, err := repository.NewRepoRelationship().GetAllRelationship(util.DBInstance)
 	assert.Nil(t, err)
 	assert.NotNil(t, result)
 }
@@ -20,10 +20,10 @@ func TestFindRelationshipByKey(t *testing.T){
 	CreateConnection()
 	
 	rela := &models.Relationship{UserEmail: "hcl@gmail.com", FriendEmail: "pvq@gmail.com", AreFriend:  true, IsSubcriber:  false, IsBlock:  false}
-	repository.NewRepo().AddUser(controller.DBInstance,&models.User{Email: rela.UserEmail})
-	repository.NewRepo().AddUser(controller.DBInstance,&models.User{Email: rela.FriendEmail})
-	repository.NewRepoRelationship().AddRelationship(controller.DBInstance, rela.UserEmail, rela.FriendEmail)
-	result, err := repository.NewRepoRelationship().FindRelationshipByKey(controller.DBInstance, rela.UserEmail, rela.FriendEmail)
+	repository.NewRepo().AddUser(util.DBInstance,&models.User{Email: rela.UserEmail})
+	repository.NewRepo().AddUser(util.DBInstance,&models.User{Email: rela.FriendEmail})
+	repository.NewRepoRelationship().AddRelationship(util.DBInstance, rela.UserEmail, rela.FriendEmail)
+	result, err := repository.NewRepoRelationship().FindRelationshipByKey(util.DBInstance, rela.UserEmail, rela.FriendEmail)
 	assert.Nil(t, err)
 	assert.NotNil(t, result)
 }
@@ -35,8 +35,8 @@ func TestAddRelationship(t *testing.T){
 	lst2 = append(lst2, "pvq@gmail.com", "pvq@gmail.com")
 	lst3 := make([]string,0)
 	lst3 = append(lst3, "ngv@gmail.com", "pvq@gmail.com")
-	repository.NewRepo().AddUser(controller.DBInstance,&models.User{Email: "hcl@gmail.com"})
-	repository.NewRepo().AddUser(controller.DBInstance,&models.User{Email: "pvq@gmail.com"})
+	repository.NewRepo().AddUser(util.DBInstance,&models.User{Email: "hcl@gmail.com"})
+	repository.NewRepo().AddUser(util.DBInstance,&models.User{Email: "pvq@gmail.com"})
 	testCases := []struct{
 		scenario string
 		mockInput r_Request.RequestFriendLists
@@ -60,7 +60,7 @@ func TestAddRelationship(t *testing.T){
 	}
 	for _, tc := range testCases{
 		t.Run(tc.scenario, func(t *testing.T) {
-			_, actualRs := repository.NewRepoRelationship().AddRelationship(controller.DBInstance, tc.mockInput.RequestFriendLists[0], tc.mockInput.RequestFriendLists[1])
+			_, actualRs := repository.NewRepoRelationship().AddRelationship(util.DBInstance, tc.mockInput.RequestFriendLists[0], tc.mockInput.RequestFriendLists[1])
 			assert.Equal(t, tc.expectedError, actualRs)
 		})
 	}
@@ -71,11 +71,11 @@ func TestFindListFriend(t *testing.T){
 	user2 := &models.User{Email: "pvq@gmail.com"}
 	user3 := &models.User{Email: "ntt@gmail.com"}
 	user4 := &models.User{Email: "vvh@gmail.com"}
-	repository.NewRepo().AddUser(controller.DBInstance, user1)
-	repository.NewRepo().AddUser(controller.DBInstance, user2)
-	repository.NewRepo().AddUser(controller.DBInstance, user3)
-	repository.NewRepoRelationship().AddRelationship(controller.DBInstance, user1.Email, user2.Email)
-	repository.NewRepoRelationship().AddRelationship(controller.DBInstance, user1.Email, user3.Email)
+	repository.NewRepo().AddUser(util.DBInstance, user1)
+	repository.NewRepo().AddUser(util.DBInstance, user2)
+	repository.NewRepo().AddUser(util.DBInstance, user3)
+	repository.NewRepoRelationship().AddRelationship(util.DBInstance, user1.Email, user2.Email)
+	repository.NewRepoRelationship().AddRelationship(util.DBInstance, user1.Email, user3.Email)
 	testCases :=[]struct{
 		scenario string
 		mockInput r_Request.RequestEmail
@@ -99,7 +99,7 @@ func TestFindListFriend(t *testing.T){
 	}
 	for _, tc := range testCases{
 		t.Run(tc.scenario, func(t *testing.T) {
-			result, err := repository.NewRepoRelationship().FindListFriend(controller.DBInstance, tc.mockInput.Email)
+			result, err := repository.NewRepoRelationship().FindListFriend(util.DBInstance, tc.mockInput.Email)
 			if tc.scenario == "Success"{
 				assert.Equal(t, tc.count, result.Count)
 				assert.Equal(t, tc.expectedError, err)
@@ -116,11 +116,11 @@ func TestFindCommonListFriend(t *testing.T){
 	user1 := &models.User{Email: "hcl@gmail.com"}
 	user2 := &models.User{Email: "pvq@gmail.com"}
 	user3 := &models.User{Email: "ntt@gmail.com"}
-	repository.NewRepo().AddUser(controller.DBInstance, user1)
-	repository.NewRepo().AddUser(controller.DBInstance, user2)
-	repository.NewRepo().AddUser(controller.DBInstance, user3)
-	repository.NewRepoRelationship().AddRelationship(controller.DBInstance, user1.Email, user2.Email)
-	repository.NewRepoRelationship().AddRelationship(controller.DBInstance, user3.Email, user2.Email)
+	repository.NewRepo().AddUser(util.DBInstance, user1)
+	repository.NewRepo().AddUser(util.DBInstance, user2)
+	repository.NewRepo().AddUser(util.DBInstance, user3)
+	repository.NewRepoRelationship().AddRelationship(util.DBInstance, user1.Email, user2.Email)
+	repository.NewRepoRelationship().AddRelationship(util.DBInstance, user3.Email, user2.Email)
 	lst := make([]string,0)
 	lst =append(lst, user1.Email, user3.Email)
 	lst2 := make([]string,0)
@@ -151,7 +151,7 @@ func TestFindCommonListFriend(t *testing.T){
 	}
 	for _, tc := range testCases{
 		t.Run(tc.scenario, func(t *testing.T) {
-			result, err := repository.NewRepoRelationship().FindCommonListFriend(controller.DBInstance,tc.mockInput.RequestFriendLists)
+			result, err := repository.NewRepoRelationship().FindCommonListFriend(util.DBInstance,tc.mockInput.RequestFriendLists)
 			if tc.scenario == "Success"{
 				assert.True(t, tc.Success)
 				assert.Equal(t, tc.expectedError, err)
@@ -168,10 +168,10 @@ func TestBesubcriber(t *testing.T){
 	user1 := &models.User{Email: "hcl@gmail.com"}
 	user2 := &models.User{Email: "pvq@gmail.com"}
 	user3 := &models.User{Email: "ntt@gmail.com"}
-	repository.NewRepo().AddUser(controller.DBInstance, user1)
-	repository.NewRepo().AddUser(controller.DBInstance, user2)
-	repository.NewRepo().AddUser(controller.DBInstance, user3)
-	repository.NewRepoRelationship().AddRelationship(controller.DBInstance, user1.Email, user2.Email)
+	repository.NewRepo().AddUser(util.DBInstance, user1)
+	repository.NewRepo().AddUser(util.DBInstance, user2)
+	repository.NewRepo().AddUser(util.DBInstance, user3)
+	repository.NewRepoRelationship().AddRelationship(util.DBInstance, user1.Email, user2.Email)
 	testCases := []struct{
 		scenario string
 		mockInput r_Request.RequestUpdate
@@ -200,7 +200,7 @@ func TestBesubcriber(t *testing.T){
 	}
 	for _ , tc := range testCases{
 		t.Run(tc.scenario, func(t *testing.T) {
-			result, err := repository.NewRepoRelationship().BeSubcribe(controller.DBInstance,tc.mockInput.Requestor, tc.mockInput.Target)
+			result, err := repository.NewRepoRelationship().BeSubcribe(util.DBInstance,tc.mockInput.Requestor, tc.mockInput.Target)
 			if tc.scenario =="Success"{
 				assert.Equal(t, tc.expectedError, err)
 				assert.Equal(t, tc.expectedBody, result.Success)
@@ -215,10 +215,10 @@ func TestToBlock(t *testing.T){
 	user1 := &models.User{Email: "hcl@gmail.com"}
 	user2 := &models.User{Email: "pvq@gmail.com"}
 	user3 := &models.User{Email: "ntt@gmail.com"}
-	repository.NewRepo().AddUser(controller.DBInstance, user1)
-	repository.NewRepo().AddUser(controller.DBInstance, user2)
-	repository.NewRepo().AddUser(controller.DBInstance, user3)
-	repository.NewRepoRelationship().AddRelationship(controller.DBInstance, user1.Email, user2.Email)
+	repository.NewRepo().AddUser(util.DBInstance, user1)
+	repository.NewRepo().AddUser(util.DBInstance, user2)
+	repository.NewRepo().AddUser(util.DBInstance, user3)
+	repository.NewRepoRelationship().AddRelationship(util.DBInstance, user1.Email, user2.Email)
 	testCases := []struct{
 		scenario string
 		mockInput r_Request.RequestUpdate
@@ -247,7 +247,7 @@ func TestToBlock(t *testing.T){
 	}
 	for _ , tc := range testCases{
 		t.Run(tc.scenario, func(t *testing.T) {
-			result, err := repository.NewRepoRelationship().ToBlock(controller.DBInstance,tc.mockInput.Requestor, tc.mockInput.Target)
+			result, err := repository.NewRepoRelationship().ToBlock(util.DBInstance,tc.mockInput.Requestor, tc.mockInput.Target)
 			if tc.scenario =="Success"{
 				assert.Equal(t, tc.expectedError, err)
 				assert.Equal(t, tc.expectedBody, result.Success)
@@ -262,10 +262,10 @@ func TestRetrieveUpdate(t *testing.T){
 	user1 := &models.User{Email: "hcl@gmail.com"}
 	user2 := &models.User{Email: "pvq@gmail.com"}
 	user3 := &models.User{Email: "ntt@gmail.com"}
-	repository.NewRepo().AddUser(controller.DBInstance, user1)
-	repository.NewRepo().AddUser(controller.DBInstance, user2)
-	repository.NewRepo().AddUser(controller.DBInstance,&models.User{Email: "user@gmail.com"})
-	repository.NewRepoRelationship().AddRelationship(controller.DBInstance, user1.Email, user2.Email)
+	repository.NewRepo().AddUser(util.DBInstance, user1)
+	repository.NewRepo().AddUser(util.DBInstance, user2)
+	repository.NewRepo().AddUser(util.DBInstance,&models.User{Email: "user@gmail.com"})
+	repository.NewRepoRelationship().AddRelationship(util.DBInstance, user1.Email, user2.Email)
 	testCases := []struct{
 		scenario string
 		mockInput r_Request.RetrieveUpdate
@@ -291,7 +291,7 @@ func TestRetrieveUpdate(t *testing.T){
 	}
 	for _ , tc := range testCases{
 		t.Run(tc.scenario, func(t *testing.T) {
-			result, err := repository.NewRepoRelationship().RetrieveUpdate(controller.DBInstance,tc.mockInput.Sender, tc.mockInput.Tartget)
+			result, err := repository.NewRepoRelationship().RetrieveUpdate(util.DBInstance,tc.mockInput.Sender, tc.mockInput.Tartget)
 			if tc.scenario =="Success"{
 				assert.Equal(t, tc.expectedError, err)
 				assert.Equal(t, tc.expectedBody, result.Success)

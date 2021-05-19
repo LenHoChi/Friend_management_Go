@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 
 	r_Response "Friend_management/models/response"
@@ -13,6 +12,7 @@ import (
 	"Friend_management/models"
 	repo "Friend_management/repository"
 	ser "Friend_management/services"
+	"Friend_management/util"
 )
 
 var UserEmailKey = "emailKey"
@@ -42,7 +42,7 @@ func Users(router chi.Router) {
 	router.Delete("/delete", NewUserControl(x).DeleteUser)
 }
 func (*controller)GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := userServices.FindAllUser(DBInstance)
+	users, err := userServices.FindAllUser(util.DBInstance)
 	if err != nil {
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError,err.Error())
 		return
@@ -55,19 +55,17 @@ func (*controller)GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
 func (*controller)CreateUser(w http.ResponseWriter, r *http.Request){
 	x,_ := db.Conn.Begin()
-	DBInstance.Conn = x
+	util.DBInstance.Conn = x
 	user := &models.User{}
 	if err := render.Bind(r, user); err != nil {
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, err.Error())
-		fmt.Println(err.Error())
 		return
 	}
 	if !repo.IsEmailValid(user.Email){
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "email was wrong")
 		return
 	}
-	fmt.Println("d",user.Email)
-	if err:= userServices.AddUser(DBInstance, user); err != nil {
+	if err:= userServices.AddUser(util.DBInstance, user); err != nil {
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, err.Error())
 		return 
 	}
@@ -75,7 +73,7 @@ func (*controller)CreateUser(w http.ResponseWriter, r *http.Request){
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, err.Error())
 		return     
 	}
-	DBInstance.Conn.Commit()
+	util.DBInstance.Conn.Commit()
 }
 
 func (*controller)GetUser(w http.ResponseWriter, r *http.Request) {
@@ -89,7 +87,7 @@ func (*controller)GetUser(w http.ResponseWriter, r *http.Request) {
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "email was wrong")
 		return
 	}
-	user, err := userServices.GetUserByEmail(DBInstance, email)
+	user, err := userServices.GetUserByEmail(util.DBInstance, email)
 	if err != nil {
 		if err == db.ErrNoMatch {
 			r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "No any user match")
@@ -106,7 +104,7 @@ func (*controller)GetUser(w http.ResponseWriter, r *http.Request) {
 
 func (*controller)DeleteUser(w http.ResponseWriter, r *http.Request) {
 	x,_ := db.Conn.Begin()
-	DBInstance.Conn = x
+	util.DBInstance.Conn = x
 	email := r.URL.Query().Get("id")
 	if len(email)==0{
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "lack email")
@@ -116,7 +114,7 @@ func (*controller)DeleteUser(w http.ResponseWriter, r *http.Request) {
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "email was wrong")
 		return
 	}
-	err := userServices.DeleteUser(DBInstance, email)
+	err := userServices.DeleteUser(util.DBInstance, email)
 	if err != nil {
 		if err == db.ErrNoMatch {
 			r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "No any user match")
@@ -125,5 +123,5 @@ func (*controller)DeleteUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	DBInstance.Conn.Commit()
+	util.DBInstance.Conn.Commit()
 }
