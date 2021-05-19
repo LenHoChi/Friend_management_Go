@@ -31,8 +31,6 @@ func TestAddRelationship(t *testing.T){
 	CreateConnection()
 	lst := make([]string,0)
 	lst = append(lst, "hcl@gmail.com", "pvq@gmail.com")
-	lst2 := make([]string,0)
-	lst2 = append(lst2, "pvq@gmail.com", "pvq@gmail.com")
 	lst3 := make([]string,0)
 	lst3 = append(lst3, "ngv@gmail.com", "pvq@gmail.com")
 	repository.NewRepo().AddUser(util.DBInstance,&models.User{Email: "hcl@gmail.com"})
@@ -123,8 +121,6 @@ func TestFindCommonListFriend(t *testing.T){
 	repository.NewRepoRelationship().AddRelationship(util.DBInstance, user3.Email, user2.Email)
 	lst := make([]string,0)
 	lst =append(lst, user1.Email, user3.Email)
-	lst2 := make([]string,0)
-	lst2 =append(lst2, user1.Email, user1.Email)
 	lst3 := make([]string,0)
 	lst3 =append(lst3, user1.Email, "ngv@gmail.com")
 	testCases :=[]struct{
