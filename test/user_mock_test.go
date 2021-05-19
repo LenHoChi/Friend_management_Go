@@ -16,7 +16,7 @@ import (
 	"errors"
 	"testing"
 
-	"io/ioutil"
+	// "io/ioutil"
 	// "io"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -122,7 +122,7 @@ func TestCreateNewUserController(t *testing.T) {
 		{
 			scenario:          "Failure",
 			inputRequest:      &models.User{Email: "hcl@gmail.com"},
-			expectedErrorBody: "error",
+			expectedErrorBody: `"error"`,
 		},
 		{
 			scenario:          "Wrong format email",
@@ -134,6 +134,10 @@ func TestCreateNewUserController(t *testing.T) {
 			inputRequest:      &models.User{Email: ""},
 			expectedErrorBody: `"email is a required field"`,
 		},
+		{
+			scenario:          "Empty request body",
+			expectedErrorBody: `"render: unable to automatically decode the request content type"`,
+		},
 	}
 
 	for _, tc := range testCase {
@@ -143,7 +147,7 @@ func TestCreateNewUserController(t *testing.T) {
 				if tc.scenario != "Failure" {
 					mockRepo.On("AddUser").Return(nil)
 				} else {
-					mockRepo.On("AddUser").Return(errors.New("Any error"))
+					mockRepo.On("AddUser").Return(errors.New("error"))
 				}
 			}
 			var (
@@ -151,25 +155,31 @@ func TestCreateNewUserController(t *testing.T) {
 				servicesUser ser.UserService    = ser.NewUserService(repoUser)
 			)
 			var w *httptest.ResponseRecorder
-			value := map[string]string{"email": tc.inputRequest.Email}
-			jsonValue, _ := json.Marshal(value)
-			req, err := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonValue))
-			if err != nil {
-				t.Fatal(err)
+			if tc.inputRequest !=nil{
+				value := map[string]string{"email": tc.inputRequest.Email}
+				jsonValue, _ := json.Marshal(value)
+				req, err := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonValue))
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				w = httptest.NewRecorder()
+				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).CreateUser)
+				handler.ServeHTTP(w, req)
+			}else{
+				req, err := http.NewRequest("POST", "/users", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				w = httptest.NewRecorder()
+				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).CreateUser)
+				handler.ServeHTTP(w, req)
 			}
-			req.Header.Set("Content-Type", "application/json")
-			w = httptest.NewRecorder()
-			handler := http.HandlerFunc(contr.NewUserControl(servicesUser).CreateUser)
-			handler.ServeHTTP(w, req)
 			if tc.scenario == "Success" {
 				assert.Equal(t, 200, w.Result().StatusCode)
-			} else if tc.scenario == "Failure" {
+			} else{
 				assert.Equal(t, 500, w.Result().StatusCode)
-			} else if tc.scenario == "Wrong format email" {
 				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
-			} else {
-				body, _ := ioutil.ReadAll(w.Result().Body)
-				assert.Equal(t, tc.expectedErrorBody, string(body))
 			}
 		})
 	}
@@ -202,6 +212,10 @@ func TestDeleteUserController(t *testing.T) {
 			inputRequest:      &models.User{Email: ""},
 			expectedErrorBody: `"email was wrong"`,
 		},
+		{
+			scenario:          "Empty request body",
+			expectedErrorBody: `"email was wrong"`,
+		},
 	}
 
 	for _, tc := range testCase {
@@ -219,25 +233,29 @@ func TestDeleteUserController(t *testing.T) {
 				servicesUser ser.UserService    = ser.NewUserService(repoUser)
 			)
 			var w *httptest.ResponseRecorder
-			req, err := http.NewRequest("DELETE", "/users/delete", nil)
-			if err != nil {
-				t.Fatal(err)
+			if tc.inputRequest != nil{
+				req, err := http.NewRequest("DELETE", "/users/delete", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				q := req.URL.Query()
+				q.Add("id", tc.inputRequest.Email)
+				req.URL.RawQuery = q.Encode()
+				w = httptest.NewRecorder()
+				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).DeleteUser)
+				handler.ServeHTTP(w, req)
+			}else{
+				req, err := http.NewRequest("DELETE", "/users/delete", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				w = httptest.NewRecorder()
+				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).DeleteUser)
+				handler.ServeHTTP(w, req)
 			}
-			q := req.URL.Query()
-			q.Add("id", tc.inputRequest.Email)
-			req.URL.RawQuery = q.Encode()
-			w = httptest.NewRecorder()
-			handler := http.HandlerFunc(contr.NewUserControl(servicesUser).DeleteUser)
-			handler.ServeHTTP(w, req)
 			if tc.scenario == "Success" {
 				assert.Equal(t, 200, w.Result().StatusCode)
-			} else if tc.scenario == "Wrong format email" {
-				assert.Equal(t, 500, w.Result().StatusCode)
-				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
-			} else if tc.scenario == "Failure" {
-				assert.Equal(t, 500, w.Result().StatusCode)
-				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
-			} else {
+			} else{
 				assert.Equal(t, 500, w.Result().StatusCode)
 				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
 			}
@@ -272,6 +290,10 @@ func TestGetUserController(t *testing.T) {
 			inputRequest:      &models.User{Email: ""},
 			expectedErrorBody: `"email was wrong"`,
 		},
+		{
+			scenario:          "Empty request body",
+			expectedErrorBody: `"email was wrong"`,
+		},
 	}
 
 	for _, tc := range testCase {
@@ -289,29 +311,33 @@ func TestGetUserController(t *testing.T) {
 				servicesUser ser.UserService    = ser.NewUserService(repoUser)
 			)
 			var w *httptest.ResponseRecorder
-			req, err := http.NewRequest("GET", "/users/find", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			q := req.URL.Query()
-			q.Add("id", tc.inputRequest.Email)
-			req.URL.RawQuery = q.Encode()
-			w = httptest.NewRecorder()
-			handler := http.HandlerFunc(contr.NewUserControl(servicesUser).GetUser)
-			handler.ServeHTTP(w, req)
 			var Body = &models.User{}
-			json.Unmarshal(w.Body.Bytes(),&Body)
-			// json.NewDecoder(io.Reader(w.Body)).Decode(&x)
+			if tc.inputRequest != nil{
+				req, err := http.NewRequest("GET", "/users/find", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				q := req.URL.Query()
+				q.Add("id", tc.inputRequest.Email)
+				req.URL.RawQuery = q.Encode()
+				w = httptest.NewRecorder()
+				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).GetUser)
+				handler.ServeHTTP(w, req)
+				json.Unmarshal(w.Body.Bytes(),&Body)
+			} else {
+				req, err := http.NewRequest("GET", "/users/find", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				w = httptest.NewRecorder()
+				handler := http.HandlerFunc(contr.NewUserControl(servicesUser).GetUser)
+				handler.ServeHTTP(w, req)
+			}
+			// json.NewDecoder(io.Reader(w.Body)).Decode(&Body)
 			if tc.scenario == "Success" {
 				assert.Equal(t, 200, w.Result().StatusCode)
 				assert.Equal(t, tc.inputRequest.Email, Body.Email)
-			} else if tc.scenario == "Wrong format email" {
-				assert.Equal(t, 500, w.Result().StatusCode)
-				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
-			} else if tc.scenario == "Failure" {
-				assert.Equal(t, 500, w.Result().StatusCode)
-				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
-			} else {
+			} else{
 				assert.Equal(t, 500, w.Result().StatusCode)
 				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
 			}

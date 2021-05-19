@@ -52,7 +52,6 @@ func (*controller)GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError,err.Error())
 		return 
 	}
-	// r_Response.ResponseWithJSON(w, http.StatusOK, "ok")	
 }
 
 func (*controller)CreateUser(w http.ResponseWriter, r *http.Request){

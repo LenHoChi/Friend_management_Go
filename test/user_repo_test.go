@@ -2,105 +2,107 @@ package test
 
 import (
 	contr "Friend_management/controller"
+	"Friend_management/db"
 	"Friend_management/models"
 	"Friend_management/repository"
-	"errors"
-	"testing"
-	"net/http"
 	"context"
+	"errors"
 	"log"
 	"net"
-	"Friend_management/db"
-	"github.com/stretchr/testify/assert"
+	"net/http"
 	"os"
+	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
-func TestGetUser(t *testing.T){
+
+func TestGetUser(t *testing.T) {
 	CreateConnection()
 	user := &models.User{Email: "hcl@gmail.com"}
 	repository.NewRepo().AddUser(contr.DBInstance, user)
-	testCases := []struct{
-		scenario	string
-		mockInput	models.User
+	testCases := []struct {
+		scenario      string
+		mockInput     models.User
 		expectedError error
 	}{
 		{
-			scenario: "Success",
-			mockInput: *user,
+			scenario:      "Success",
+			mockInput:     *user,
 			expectedError: nil,
 		},
 	}
-	for _, tc := range testCases{
+	for _, tc := range testCases {
 		t.Run(tc.scenario, func(t *testing.T) {
-			_,actualRs := repository.NewRepo().GetUserByEmail(contr.DBInstance,tc.mockInput.Email)
+			_, actualRs := repository.NewRepo().GetUserByEmail(contr.DBInstance, tc.mockInput.Email)
 			assert.Equal(t, tc.expectedError, actualRs)
 		})
 	}
 }
-func TestDeleteUser(t *testing.T){
+func TestDeleteUser(t *testing.T) {
 	CreateConnection()
 	//add user
 	user := &models.User{Email: "hcl@gmail.com"}
-	user3 := &models.User{Email: "hcl2@gmail.com"}
-	repository.NewRepo().AddUser(contr.DBInstance,user)
+	user2 := &models.User{Email: "hcl2@gmail.com"}
+	repository.NewRepo().AddUser(contr.DBInstance, user)
 
 	testCases := []struct {
-		scenario	string
-		mockInput	 string
-		expectedError	 error
+		scenario      string
+		mockInput     string
+		expectedError error
 	}{
 		{
-			scenario:	"Success",
-			mockInput: user.Email,
+			scenario:      "Success",
+			mockInput:     user.Email,
 			expectedError: nil,
 		},
 		{
-			scenario: "User not exists",
-			mockInput: user3.Email,
+			scenario:      "User not exists",
+			mockInput:     user2.Email,
 			expectedError: errors.New("this user not exists"),
 		},
 	}
 
-	for _, tc := range testCases{
+	for _, tc := range testCases {
 		t.Run(tc.scenario, func(t *testing.T) {
-			actualRs := repository.NewRepo().DeleteUser(contr.DBInstance,tc.mockInput)
+			actualRs := repository.NewRepo().DeleteUser(contr.DBInstance, tc.mockInput)
 			assert.Equal(t, tc.expectedError, actualRs)
 		})
 	}
 }
-func TestCreateNewUser (t *testing.T){
+func TestCreateNewUser(t *testing.T) {
 	const numsUser int = 1
 	lstUsers := &models.UserList{}
-	for i := 0;i<numsUser;i++{
+	for i := 0; i < numsUser; i++ {
 		user := &models.User{Email: "hcl@gmail.com"}
 		lstUsers.Users = append(lstUsers.Users, *user)
 	}
 	CreateConnection()
-	testCases := []struct{
-		scenario	string
-		mockInput models.User
+	testCases := []struct {
+		scenario      string
+		mockInput     models.User
 		expectedError error
 	}{
 		{
-			scenario: "Success",
-			mockInput: lstUsers.Users[0],
+			scenario:      "Success",
+			mockInput:     lstUsers.Users[0],
 			expectedError: nil,
 		},
 		{
-			scenario: 	"User Exists",
-			mockInput: 	lstUsers.Users[0],
+			scenario:      "User Exists",
+			mockInput:     lstUsers.Users[0],
 			expectedError: errors.New("this email exists already"),
 		},
 	}
 
-	for _, tc := range testCases{
+	for _, tc := range testCases {
 		t.Run(tc.scenario, func(t *testing.T) {
-			actualRs := repository.NewRepo().AddUser(contr.DBInstance,&tc.mockInput)
+			actualRs := repository.NewRepo().AddUser(contr.DBInstance, &tc.mockInput)
 			assert.Equal(t, tc.expectedError, actualRs)
 		})
 	}
 }
-func TestGetAllListUsers(t *testing.T){
+func TestGetAllListUsers(t *testing.T) {
 	CreateConnection()
 
 	result, err := repository.NewRepo().GetAllUsers(contr.DBInstance)

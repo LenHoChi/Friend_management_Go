@@ -20,10 +20,8 @@ func TestFindRelationshipByKey(t *testing.T){
 	CreateConnection()
 	
 	rela := &models.Relationship{UserEmail: "hcl@gmail.com", FriendEmail: "pvq@gmail.com", AreFriend:  true, IsSubcriber:  false, IsBlock:  false}
-	user1 := &models.User{Email: rela.UserEmail}
-	user2 := &models.User{Email: rela.FriendEmail}
-	repository.NewRepo().AddUser(controller.DBInstance,user1)
-	repository.NewRepo().AddUser(controller.DBInstance,user2)
+	repository.NewRepo().AddUser(controller.DBInstance,&models.User{Email: rela.UserEmail})
+	repository.NewRepo().AddUser(controller.DBInstance,&models.User{Email: rela.FriendEmail})
 	repository.NewRepoRelationship().AddRelationship(controller.DBInstance, rela.UserEmail, rela.FriendEmail)
 	result, err := repository.NewRepoRelationship().FindRelationshipByKey(controller.DBInstance, rela.UserEmail, rela.FriendEmail)
 	assert.Nil(t, err)
@@ -48,11 +46,6 @@ func TestAddRelationship(t *testing.T){
 			scenario: "Success",
 			mockInput: r_Request.RequestFriendLists{RequestFriendLists :lst},
 			expectedError: nil,
-		},
-		{
-			scenario: "Fail by same email",
-			mockInput: r_Request.RequestFriendLists{RequestFriendLists :lst2},
-			expectedError: errors.New("error cause 2 emails are same"),
 		},
 		{
 			scenario: "Fail by not exists",
@@ -151,11 +144,6 @@ func TestFindCommonListFriend(t *testing.T){
 			Success: true,
 		},
 		{
-			scenario: "Fail by same email",
-			mockInput: r_Request.RequestFriendLists{RequestFriendLists: lst2},
-			expectedError: errors.New("two emails are same"),
-		},
-		{
 			scenario: "Fail by not exists",
 			mockInput: r_Request.RequestFriendLists{RequestFriendLists: lst3},
 			expectedError: errors.New("no users in table"),
@@ -205,11 +193,6 @@ func TestBesubcriber(t *testing.T){
 			expectedBody: true,
 		},
 		{
-			scenario: "Fail by email same",
-			mockInput: r_Request.RequestUpdate{Requestor: user1.Email, Target: user1.Email},
-			expectedError: errors.New("two emails are same"),
-		},
-		{
 			scenario: "Fail by not exists",
 			mockInput: r_Request.RequestUpdate{Requestor: user1.Email, Target: "user@gmail.com"},
 			expectedError: errors.New("no users in table"),
@@ -257,11 +240,6 @@ func TestToBlock(t *testing.T){
 			expectedBody: true,
 		},
 		{
-			scenario: "Fail by email same",
-			mockInput: r_Request.RequestUpdate{Requestor: user1.Email, Target: user1.Email},
-			expectedError: errors.New("two emails are same"),
-		},
-		{
 			scenario: "Fail by not exists",
 			mockInput: r_Request.RequestUpdate{Requestor: user1.Email, Target: "user@gmail.com"},
 			expectedError: errors.New("no users in table"),
@@ -293,12 +271,17 @@ func TestRetrieveUpdate(t *testing.T){
 		mockInput r_Request.RetrieveUpdate
 		expectedError error
 		expectedBody bool
+		expectedBodyRecipients []string
 	}{
 		{
 			scenario: "Success",
-			mockInput: r_Request.RetrieveUpdate{Sender : user1.Email, Tartget: "user@gmail.com"},
+			mockInput: r_Request.RetrieveUpdate{Sender : user1.Email, Tartget: "sent to abc@gmail.com"},
 			expectedError: nil,
 			expectedBody: true,
+			expectedBodyRecipients: []string{
+				"pvq@gmail.com",
+				"abc@gmail.com",
+			},
 		},
 		{
 			scenario: "Fail by not exists",
@@ -308,10 +291,11 @@ func TestRetrieveUpdate(t *testing.T){
 	}
 	for _ , tc := range testCases{
 		t.Run(tc.scenario, func(t *testing.T) {
-			result, err := repository.NewRepoRelationship().RetrieveUpdate(controller.DBInstance,tc.mockInput.Sender, "sent to abc@gmail.com")
+			result, err := repository.NewRepoRelationship().RetrieveUpdate(controller.DBInstance,tc.mockInput.Sender, tc.mockInput.Tartget)
 			if tc.scenario =="Success"{
 				assert.Equal(t, tc.expectedError, err)
 				assert.Equal(t, tc.expectedBody, result.Success)
+				assert.Equal(t, tc.expectedBodyRecipients, result.Recipients)
 			}else{
 				assert.Equal(t, tc.expectedError, err)
 			}

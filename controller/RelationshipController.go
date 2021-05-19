@@ -63,13 +63,24 @@ func (*controllerRelationship)MakeFriend(w http.ResponseWriter, r *http.Request)
 	x,_ := db.Conn.Begin()
 	DBInstance.Conn = x
 	requestAddFriend := &r_Request.RequestFriendLists{}
-	render.Bind(r, requestAddFriend)
+	if err := render.Bind(r, requestAddFriend);err != nil{
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("invalid format")))
+		return
+	}
 	//check length <2
+	if len(requestAddFriend.RequestFriendLists)!=2{
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("not enough email")))
+		return
+	}
 	userEmail := requestAddFriend.RequestFriendLists[0]
 	friendEmail := requestAddFriend.RequestFriendLists[1]
 	//check valid for two emails
 	if !repo.IsEmailValid(userEmail)||!repo.IsEmailValid(friendEmail){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
+		return
+	}
+	if userEmail == friendEmail {
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("error cause 2 emails are same")))
 		return
 	}
 	responseRS, err := relationshipService.AddRelationship(DBInstance, userEmail, friendEmail)
@@ -86,7 +97,10 @@ func (*controllerRelationship)MakeFriend(w http.ResponseWriter, r *http.Request)
 //{"email":"1"}
 func (*controllerRelationship)FindListFriend(w http.ResponseWriter, r *http.Request){
 	Argument := &r_Request.RequestEmail{}
-	render.Bind(r, Argument)
+	if err := render.Bind(r, Argument);err != nil{
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("invalid format")))
+		return
+	}
 	if !repo.IsEmailValid(Argument.Email){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
 		return
@@ -105,9 +119,20 @@ func (*controllerRelationship)FindListFriend(w http.ResponseWriter, r *http.Requ
 func (*controllerRelationship)FindCommonListFriend(w http.ResponseWriter, r *http.Request){
 	rsFriend := &r_Request.RequestFriendLists{}
 	ls := make([]string,0)
-	render.Bind(r, rsFriend)
+	if err := render.Bind(r, rsFriend);err != nil{
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("invalid format")))
+		return
+	}
+	if len(rsFriend.RequestFriendLists)!=2{
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("enough email")))
+		return
+	}
 	if !repo.IsEmailValid(rsFriend.RequestFriendLists[0])||!repo.IsEmailValid(rsFriend.RequestFriendLists[1]){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
+		return
+	}
+	if rsFriend.RequestFriendLists[0] == rsFriend.RequestFriendLists[1] {
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("error cause 2 emails are same")))
 		return
 	}
 	ls = append(ls, rsFriend.RequestFriendLists[0], rsFriend.RequestFriendLists[1])
@@ -126,9 +151,16 @@ func (*controllerRelationship)BeSubcriber(w http.ResponseWriter, r *http.Request
 	x,_ := db.Conn.Begin()
 	DBInstance.Conn = x
 	Argument := &r_Request.RequestUpdate{}
-	render.Bind(r, Argument)
+	if err := render.Bind(r, Argument);err != nil{
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("invalid format")))
+		return
+	}
 	if !repo.IsEmailValid(Argument.Requestor)||!repo.IsEmailValid(Argument.Target){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
+		return
+	}
+	if Argument.Requestor == Argument.Target {
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("error cause 2 emails are same")))
 		return
 	}
 	responseRS, err:= relationshipService.BeSubcribe(DBInstance, Argument.Requestor, Argument.Target)
@@ -146,9 +178,16 @@ func (*controllerRelationship)ToBLock(w http.ResponseWriter, r *http.Request){
 	x,_ := db.Conn.Begin()
 	DBInstance.Conn = x
 	Argument := &r_Request.RequestUpdate{}
-	render.Bind(r, Argument)
+	if err := render.Bind(r, Argument);err != nil{
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("invalid format")))
+		return
+	}
 	if !repo.IsEmailValid(Argument.Requestor)||!repo.IsEmailValid(Argument.Target){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
+		return
+	}
+	if Argument.Requestor == Argument.Target {
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("error cause 2 emails are same")))
 		return
 	}
 	responseRS ,err :=relationshipService.ToBlock(DBInstance, Argument.Requestor, Argument.Target)
@@ -165,7 +204,10 @@ func (*controllerRelationship)ToBLock(w http.ResponseWriter, r *http.Request){
 // {"sender":"len1","target":"len2"}
 func (*controllerRelationship)RetrieveUpdate(w http.ResponseWriter, r *http.Request){
 	Argument := &r_Request.RetrieveUpdate{}
-	render.Bind(r, Argument)
+	if err := render.Bind(r, Argument);err != nil{
+		render.Render(w,r,exception.ServerErrorRenderer(errors.New("invalid format")))
+		return
+	}
 	if !repo.IsEmailValid(Argument.Sender){
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("email is wrong")))
 		return

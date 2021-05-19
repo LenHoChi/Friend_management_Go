@@ -61,9 +61,6 @@ func (r *repoRelationship)FindRelationshipByKey(database db.Database, userEmail 
 }
 func (r *repoRelationship)AddRelationship(database db.Database, userEmail string, friendEmail string) (*r_Response.ResponseSuccess, error) {
 	//check email similar
-	if userEmail == friendEmail {
-		return nil, errors.New("error cause 2 emails are same")
-	}
 	_, errFindUser1 := NewRepo().GetUserByEmail(database, userEmail)
 	_, errFindUser2 := NewRepo().GetUserByEmail(database, friendEmail)
 	if errFindUser1 != nil || errFindUser2 != nil {
@@ -124,9 +121,6 @@ func (r *repoRelationship)FindListFriend(database db.Database, email string) (*r
 func (r *repoRelationship)FindCommonListFriend(database db.Database, lstEmail []string) (*r_Response.ResponseListFriend, error) {
 	list := &r_Response.ResponseListFriend{}
 	//check same email
-	if lstEmail[0] == lstEmail[1] {
-		return nil, errors.New("two emails are same")
-	}
 	//check exists email
 	_, errFindUser1 := NewRepo().GetUserByEmail(database, lstEmail[0])
 	_, errFindUser2 := NewRepo().GetUserByEmail(database, lstEmail[1])
@@ -160,10 +154,6 @@ func (r *repoRelationship)BeSubcribe(database db.Database, requestor string, tar
 	queryUpdate := `update relationship set issubcriber =true where user_email =$1 and friend_email =$2`
 	queryInsert := `INSERT INTO relationship values ($1, $2, $3, $4, $5)`
 	// database.Conn.QueryRow(query, requestor, target)
-	//check email same
-	if requestor == target {
-		return nil, errors.New("two emails are same")
-	}
 	//check exists email
 	_, errFindUser1 := NewRepo().GetUserByEmail(database, requestor)
 	_, errFindUser2 := NewRepo().GetUserByEmail(database, target)
@@ -190,9 +180,6 @@ func (r *repoRelationship)ToBlock(database db.Database, requestor string, target
 	queryInsert := `INSERT INTO relationship values ($1, $2, $3, $4, $5)`
 	queryUpdate := `update relationship set issubcriber =false where user_email=$1 and friend_email=$2`
 	queryUpdateBlock := `update relationship set issubcriber =false , isblock=true where user_email=$1 and friend_email=$2`
-	if requestor == target {
-		return nil, errors.New("two emails are same")
-	}
 	_, errFindUser1 := NewRepo().GetUserByEmail(database, requestor)
 	_, errFindUser2 := NewRepo().GetUserByEmail(database, target)
 	if errFindUser1 != nil || errFindUser2 != nil {
@@ -217,7 +204,6 @@ func (r *repoRelationship)ToBlock(database db.Database, requestor string, target
 			}
 		}
 	}
-	// database.Conn.QueryRow(query,requestor,target)
 	return &r_Response.ResponseSuccess{Success: true}, nil
 }
 

@@ -65,8 +65,8 @@ func (mock *MockRepositoryRela)RetrieveUpdate(database db.Database, sender strin
 func TestGetListRelationship(t *testing.T){
 	//given
 	email1 := &models.User{Email: "hcl@gmail.com"}
-	email2 := &models.User{Email: "hcl@gmail.com"}
-	email3 := &models.User{Email: "hcl@gmail.com"}
+	email2 := &models.User{Email: "hcl2@gmail.com"}
+	email3 := &models.User{Email: "hcl3@gmail.com"}
 	lst := &models.RelationshipList{}
 	l1 := &models.Relationship{UserEmail: email1.Email, FriendEmail: email2.Email, AreFriend: true, IsSubcriber:  false, IsBlock:  false}
 	l2 := &models.Relationship{UserEmail: email1.Email, FriendEmail: email3.Email, AreFriend: true, IsSubcriber:  false, IsBlock:  false}
@@ -81,7 +81,7 @@ func TestGetListRelationship(t *testing.T){
 		{
 			scenario: "Success",
 			mockResponse: lst,
-			expectedSuccessBody: `{"relationships":[{"UserEmail":"hcl@gmail.com","FriendEmail":"hcl@gmail.com","AreFriend":true,"IsSubcriber":false,"IsBlock":false},{"UserEmail":"hcl@gmail.com","FriendEmail":"hcl@gmail.com","AreFriend":true,"IsSubcriber":false,"IsBlock":false}]}`,
+			expectedSuccessBody: `{"relationships":[{"UserEmail":"hcl@gmail.com","FriendEmail":"hcl2@gmail.com","AreFriend":true,"IsSubcriber":false,"IsBlock":false},{"UserEmail":"hcl@gmail.com","FriendEmail":"hcl3@gmail.com","AreFriend":true,"IsSubcriber":false,"IsBlock":false}]}`,
 		},
 		{
 			scenario: "Failure",
@@ -154,6 +154,25 @@ func TestMakeFriendController(t *testing.T){
 			expectedErrorBody: "error",
 		},
 		{
+			scenario: "Same email",
+			inputRequest: &r_Request.RequestFriendLists{
+				RequestFriendLists: []string{
+					"hcl@gmail.com",
+					"hcl@gmail.com",
+				},
+			},
+			expectedErrorBody: `error cause 2 emails are same`,
+		},
+		{
+			scenario: "Lack email",
+			inputRequest: &r_Request.RequestFriendLists{
+				RequestFriendLists: []string{
+					"hcl@gmail.com",
+				},
+			},
+			expectedErrorBody: `not enough email`,
+		},
+		{
 			scenario: "Wrong format email",
 			inputRequest: &r_Request.RequestFriendLists{
 				RequestFriendLists: []string{
@@ -162,6 +181,10 @@ func TestMakeFriendController(t *testing.T){
 				},
 			},
 			expectedErrorBody: `email is wrong`,
+		},
+		{
+			scenario:          "Empty request body",
+			expectedErrorBody: "invalid format",
 		},
 	}
 	for _, tc := range testCases{
@@ -179,26 +202,30 @@ func TestMakeFriendController(t *testing.T){
 				serviceRelationship ser.RepositoryService = ser.NewRelationshipService(repoRelationship)
 			)
 			var Body2 r_Response.ResponseRenderError
+			var Body r_Response.ResponseSuccess
 			var w *httptest.ResponseRecorder
+			var req *http.Request
+			var err error
 			if tc.inputRequest != nil {
-				values := map[string][]string{"friends": tc.inputRequest.RequestFriendLists}
-				jsonValue,_ := json.Marshal(values)
-				req, err := http.NewRequest("POST","/relationship/make",bytes.NewBuffer(jsonValue))
-				if err != nil{
-					t.Fatal(err)
-				}
+				jsonValue,_ := json.Marshal(tc.inputRequest)
+				req, err = http.NewRequest("POST","/relationship/make",bytes.NewBuffer(jsonValue))
 				req.Header.Set("Content-Type","application/json")
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).MakeFriend)
-				handler.ServeHTTP(w, req)
-				json.Unmarshal(w.Body.Bytes(),&Body2)
+			}else{
+				req, err = http.NewRequest("POST","/relationship/make",nil)
 			}
+			if err != nil{
+				t.Fatal(err)
+			}
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).MakeFriend)
+			handler.ServeHTTP(w, req)
+			json.Unmarshal(w.Body.Bytes(),&Body2)
+			json.Unmarshal(w.Body.Bytes(), &Body)
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
-			}else if tc.scenario == "Failure"{
+				assert.Equal(t, tc.mockResponse.Success, Body.Success)
+			}else {
 				assert.Equal(t, 500, w.Result().StatusCode)
-				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
-			}else if tc.scenario =="Wrong format email"{
 				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
 			}
 		})
@@ -241,6 +268,11 @@ func TestFindListFriendController(t *testing.T){
 			},
 			expectedErrorBody: `email is wrong`,
 		},
+		{
+			scenario:          "Empty request body",
+			expectedErrorBody: `invalid format`,
+		},
+		
 	}
 	for _, tc := range testCases{
 		t.Run(tc.scenario, func(t *testing.T) {
@@ -258,25 +290,26 @@ func TestFindListFriendController(t *testing.T){
 			)
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
+			var req *http.Request
+			var err error
 			if tc.inputRequest != nil {
-				value := map[string]string{"email": tc.inputRequest.Email}
-				jsonValue,_ := json.Marshal(value)
-				req, err := http.NewRequest("POST","/relationship/list",bytes.NewBuffer(jsonValue))
-				if err != nil{
-					t.Fatal(err)
-				}
+				jsonValue,_ := json.Marshal(tc.inputRequest)
+				req, err = http.NewRequest("POST","/relationship/list",bytes.NewBuffer(jsonValue))
 				req.Header.Set("Content-Type","application/json")
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).FindListFriend)
-				handler.ServeHTTP(w, req)
-				json.Unmarshal(w.Body.Bytes(),&Body2)
+			}else{
+				req, err = http.NewRequest("POST","/relationship/list",nil)
 			}
+			if err != nil{
+				t.Fatal(err)
+			}
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).FindListFriend)
+			handler.ServeHTTP(w, req)
+			json.Unmarshal(w.Body.Bytes(),&Body2)
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
-			}else if tc.scenario == "Failure"{
+			}else {
 				assert.Equal(t, 500, w.Result().StatusCode)
-				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
-			}else if tc.scenario =="Wrong format email"{
 				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
 			}
 		})
@@ -319,6 +352,16 @@ func TestFindCommonListFriendController(t *testing.T){
 			expectedErrorBody: "error",
 		},
 		{
+			scenario: "Same email",
+			inputRequest: &r_Request.RequestFriendLists{
+				RequestFriendLists: []string{
+					"hcl@gmail.com",
+					"hcl@gmail.com",
+				},
+			},
+			expectedErrorBody: "error cause 2 emails are same",
+		},
+		{
 			scenario: "Wrong format email",
 			inputRequest: &r_Request.RequestFriendLists{
 				RequestFriendLists: []string{
@@ -327,6 +370,19 @@ func TestFindCommonListFriendController(t *testing.T){
 				},
 			},
 			expectedErrorBody: `email is wrong`,
+		},
+		{
+			scenario: "Enough email",
+			inputRequest: &r_Request.RequestFriendLists{
+				RequestFriendLists: []string{
+					"hcl@gmail.com",
+				},
+			},
+			expectedErrorBody: `enough email`,
+		},
+		{
+			scenario:          "Empty request body",
+			expectedErrorBody: `invalid format`,
 		},
 	}
 	for _, tc := range testCases{
@@ -345,24 +401,26 @@ func TestFindCommonListFriendController(t *testing.T){
 			)
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
+			var req *http.Request
+			var err error
 			if tc.inputRequest != nil {
 				jsonValue,_ := json.Marshal(tc.inputRequest)
-				req, err := http.NewRequest("POST","/relationship/common",bytes.NewBuffer(jsonValue))
-				if err != nil{
-					t.Fatal(err)
-				}
+				req, err = http.NewRequest("POST","/relationship/common",bytes.NewBuffer(jsonValue))
 				req.Header.Set("Content-Type","application/json")
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).FindCommonListFriend)
-				handler.ServeHTTP(w, req)
-				json.Unmarshal(w.Body.Bytes(),&Body2)
+			}else{
+				req, err = http.NewRequest("POST","/relationship/common",nil)
 			}
+			if err != nil{
+				t.Fatal(err)
+			}
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).FindCommonListFriend)
+			handler.ServeHTTP(w, req)
+			json.Unmarshal(w.Body.Bytes(),&Body2)
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
-			}else if tc.scenario == "Failure"{
+			}else {
 				assert.Equal(t, 500, w.Result().StatusCode)
-				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
-			}else if tc.scenario =="Wrong format email"{
 				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
 			}
 		})
@@ -393,6 +451,20 @@ func TestBeSubcriberController(t *testing.T){
 			inputRequest: &r_Request.RequestUpdate{Requestor: "hcl", Target: "hcl1@gmail.com"},
 			expectedErrorBody: `email is wrong`,
 		},
+		{
+			scenario: "Same email",
+			inputRequest: &r_Request.RequestUpdate{Requestor: "hcl1@gmail.com", Target: "hcl1@gmail.com"},
+			expectedErrorBody: "error cause 2 emails are same",
+		},
+		{
+			scenario: "Not enough email",
+			inputRequest: &r_Request.RequestUpdate{Requestor: "hcl1@gmail.com"},
+			expectedErrorBody: "email is wrong",
+		},
+		{
+			scenario:          "Empty request body",
+			expectedErrorBody: `invalid format`,
+		},
 	}
 	for _, tc := range testCases{
 		t.Run(tc.scenario, func(t *testing.T) {
@@ -409,25 +481,30 @@ func TestBeSubcriberController(t *testing.T){
 				serviceRelationship ser.RepositoryService = ser.NewRelationshipService(repoRelationship)
 			)
 			var Body2 r_Response.ResponseRenderError
+			var Body r_Response.ResponseSuccess
 			var w *httptest.ResponseRecorder
+			var req *http.Request
+			var err error
 			if tc.inputRequest != nil {
 				jsonValue,_ := json.Marshal(tc.inputRequest)
-				req, err := http.NewRequest("POST","/relationship/update",bytes.NewBuffer(jsonValue))
-				if err != nil{
-					t.Fatal(err)
-				}
+				req, err = http.NewRequest("POST","/relationship/update",bytes.NewBuffer(jsonValue))
 				req.Header.Set("Content-Type","application/json")
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).BeSubcriber)
-				handler.ServeHTTP(w, req)
-				json.Unmarshal(w.Body.Bytes(),&Body2)
+			}else{
+				req, err = http.NewRequest("POST","/relationship/update",nil)
 			}
+			if err != nil{
+				t.Fatal(err)
+			}
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).BeSubcriber)
+			handler.ServeHTTP(w, req)
+			json.Unmarshal(w.Body.Bytes(),&Body2)
+			json.Unmarshal(w.Body.Bytes(),&Body)
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
-			}else if tc.scenario == "Failure"{
+				assert.Equal(t, tc.mockResponse.Success, Body.Success)
+			}else {
 				assert.Equal(t, 500, w.Result().StatusCode)
-				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
-			}else if tc.scenario =="Wrong format email"{
 				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
 			}
 		})
@@ -458,6 +535,20 @@ func TestToBlockController(t *testing.T){
 			inputRequest: &r_Request.RequestUpdate{Requestor: "hcl", Target: "hcl1@gmail.com"},
 			expectedErrorBody: `email is wrong`,
 		},
+		{
+			scenario: "Same email",
+			inputRequest: &r_Request.RequestUpdate{Requestor: "hcl1@gmail.com", Target: "hcl1@gmail.com"},
+			expectedErrorBody: "error cause 2 emails are same",
+		},
+		{
+			scenario: "Not enough email",
+			inputRequest: &r_Request.RequestUpdate{Requestor: "hcl1@gmail.com"},
+			expectedErrorBody: "email is wrong",
+		},
+		{
+			scenario:          "Empty request body",
+			expectedErrorBody: `invalid format`,
+		},
 	}
 	for _, tc := range testCases{
 		t.Run(tc.scenario, func(t *testing.T) {
@@ -474,25 +565,30 @@ func TestToBlockController(t *testing.T){
 				serviceRelationship ser.RepositoryService = ser.NewRelationshipService(repoRelationship)
 			)
 			var Body2 r_Response.ResponseRenderError
+			var Body r_Response.ResponseSuccess
 			var w *httptest.ResponseRecorder
+			var req *http.Request
+			var err error
 			if tc.inputRequest != nil {
 				jsonValue,_ := json.Marshal(tc.inputRequest)
-				req, err := http.NewRequest("POST","/relationship/block",bytes.NewBuffer(jsonValue))
-				if err != nil{
-					t.Fatal(err)
-				}
+				req, err = http.NewRequest("POST","/relationship/block",bytes.NewBuffer(jsonValue))
 				req.Header.Set("Content-Type","application/json")
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).ToBLock)
-				handler.ServeHTTP(w, req)
-				json.Unmarshal(w.Body.Bytes(),&Body2)
+			}else{
+				req, err = http.NewRequest("POST","/relationship/block",nil)
 			}
+			if err != nil{
+				t.Fatal(err)
+			}
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).ToBLock)
+			handler.ServeHTTP(w, req)
+			json.Unmarshal(w.Body.Bytes(),&Body2)
+			json.Unmarshal(w.Body.Bytes(),&Body)
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
-			}else if tc.scenario == "Failure"{
+				assert.Equal(t, tc.mockResponse.Success, Body.Success)
+			}else {
 				assert.Equal(t, 500, w.Result().StatusCode)
-				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
-			}else if tc.scenario =="Wrong format email"{
 				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
 			}
 		})
@@ -522,6 +618,10 @@ func TestRetrieveUpdateController(t *testing.T){
 			inputRequest: &r_Request.RetrieveUpdate{Sender: "hcl", Tartget: "hcl1@gmail.com"},
 			expectedErrorBody: `email is wrong`,
 		},
+		{
+			scenario:          "Empty request body",
+			expectedErrorBody: `invalid format`,
+		},
 	}
 	for _, tc := range testCases{
 		t.Run(tc.scenario, func(t *testing.T) {
@@ -537,26 +637,28 @@ func TestRetrieveUpdateController(t *testing.T){
 				repoRelationship repo.RelationshipInter = mockRepo
 				serviceRelationship ser.RepositoryService = ser.NewRelationshipService(repoRelationship)
 			)
+			var req *http.Request
+			var err error
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
 			if tc.inputRequest != nil {
 				jsonValue,_ := json.Marshal(tc.inputRequest)
-				req, err := http.NewRequest("POST","/relationship/retrieve",bytes.NewBuffer(jsonValue))
-				if err != nil{
-					t.Fatal(err)
-				}
+				req, err = http.NewRequest("POST","/relationship/retrieve",bytes.NewBuffer(jsonValue))
 				req.Header.Set("Content-Type","application/json")
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).RetrieveUpdate)
-				handler.ServeHTTP(w, req)
-				json.Unmarshal(w.Body.Bytes(),&Body2)
+			}else{
+				req, err = http.NewRequest("POST","/relationship/retrieve",nil)
 			}
+			if err != nil{
+				t.Fatal(err)
+			}
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).RetrieveUpdate)
+			handler.ServeHTTP(w, req)
+			json.Unmarshal(w.Body.Bytes(),&Body2)
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
-			}else if tc.scenario == "Failure"{
+			}else {
 				assert.Equal(t, 500, w.Result().StatusCode)
-				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
-			}else if tc.scenario =="Wrong format email"{
 				assert.Equal(t, tc.expectedErrorBody, Body2.Message)
 			}
 		})
