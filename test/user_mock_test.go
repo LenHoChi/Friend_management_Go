@@ -9,23 +9,15 @@ import (
 	"bytes"
 	"encoding/json"
 
-	// "fmt"
-
-	// "errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
-
-	// "bytes"
-	// "database/sql"
 
 	"errors"
 	"testing"
 
 	"io/ioutil"
-	// gomock "github.com/golang/mock/gomock"
-	// "github.com/sgreben/testing-with-gomock/mocks"
-	// "github.com/sgreben/testing-with-gomock/user"
+	// "io"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -41,7 +33,6 @@ func (mock *MockRepository) GetAllUsers(database db.Database) (*models.UserList,
 }
 func (mock *MockRepository) AddUser(database db.Database, user *models.User) error {
 	args := mock.Called()
-	//rs := args.Get(0)
 	return args.Error(0)
 }
 func (mock *MockRepository) GetUserByEmail(database db.Database, email string) (models.User, error) {
@@ -53,23 +44,12 @@ func (mock *MockRepository) DeleteUser(database db.Database, email string) error
 	args := mock.Called()
 	return args.Error(0)
 }
-func TestFindAll(t *testing.T) {
-	mockRepo := new(MockRepository)
-	u1 := models.User{Email: "len"}
-	lst := make([]models.User, 0)
-	lst = append(lst, u1)
-	mockRepo.On("GetAllUsers").Return(&models.UserList{lst}, nil)
-	testing := ser.NewUserService(mockRepo)
-	rs, _ := testing.FindAllUser(db.Database{})
-	mockRepo.AssertExpectations(t)
-	assert.Equal(t, "len", rs.Users[0].Email)
-}
 func TestGetListUser(t *testing.T) {
 	//given
 	lst := &models.UserList{}
-	u1 := &models.User{Email: "len1"}
-	u2 := &models.User{Email: "len2"}
-	u3 := &models.User{Email: "len3"}
+	u1 := &models.User{Email: "hcl@gmail.com"}
+	u2 := &models.User{Email: "hcl2@gmail.com"}
+	u3 := &models.User{Email: "hcl3@gmail.com"}
 	lst.Users = append(lst.Users, *u1, *u2, *u3)
 	testCases := []struct {
 		scenario            string
@@ -81,7 +61,7 @@ func TestGetListUser(t *testing.T) {
 		{
 			scenario:            "Success",
 			mockResponse:        lst,
-			expectedSuccessBody: `{"users":[{"email":"len1"},{"email":"len2"},{"email":"len3"}]}`,
+			expectedSuccessBody: `{"users":[{"email":"hcl@gmail.com"},{"email":"hcl2@gmail.com"},{"email":"hcl3@gmail.com"}]}`,
 			//mockerorr = nil --> return = nil -- controller -->success
 		},
 		{
@@ -98,31 +78,27 @@ func TestGetListUser(t *testing.T) {
 			mockRepo.On("GetAllUsers").Return(tc.mockResponse, tc.mockError)
 
 			var (
-				y repo.UserRepoInter = mockRepo
-				x ser.UserService    = ser.NewUserService(y)
+				repoUser     repo.UserRepoInter = mockRepo
+				servicesUser ser.UserService    = ser.NewUserService(repoUser)
 			)
 			req, err := http.NewRequest("GET", "/users", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 			w := httptest.NewRecorder()
-			handler := http.HandlerFunc(contr.NewUserControl(x).GetAllUsers)
+			handler := http.HandlerFunc(contr.NewUserControl(servicesUser).GetAllUsers)
 			handler.ServeHTTP(w, req)
 			var Body models.UserList
-			// var actualResult string
 			if tc.scenario == "Success" {
-				err = json.Unmarshal([]byte(w.Body.String()), &Body)
+				err = json.Unmarshal(w.Body.Bytes(), &Body)
 				if err != nil {
 					t.Errorf("something wrong")
 				}
-				// body, _ := ioutil.ReadAll(w.Result().Body)
-				// actualResult = string(body)
-			}
-			if tc.scenario == "Success" {
 				assert.Equal(t, 200, w.Result().StatusCode)
 				text, _ := w.Body.ReadString('\n')
 				text = strings.Replace(text, "\n", "", -1)
 				assert.Equal(t, tc.expectedSuccessBody, text)
+				assert.Equal(t, u1.Email, Body.Users[0].Email)
 			} else {
 				assert.Equal(t, 500, w.Result().StatusCode)
 				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
@@ -131,7 +107,7 @@ func TestGetListUser(t *testing.T) {
 	}
 }
 func TestCreateNewUserController(t *testing.T) {
-	CreateConnection()
+	db.Initialize()
 	//given
 	testCase := []struct {
 		scenario          string
@@ -140,68 +116,58 @@ func TestCreateNewUserController(t *testing.T) {
 	}{
 		{
 			scenario:          "Success",
-			inputRequest:      &models.User{Email: "hcl2@gmail.com"},
+			inputRequest:      &models.User{Email: "hcl@gmail.com"},
 			expectedErrorBody: "",
 		},
 		{
 			scenario:          "Failure",
-			inputRequest:      &models.User{Email: "hcl2@gmail.com"},
+			inputRequest:      &models.User{Email: "hcl@gmail.com"},
 			expectedErrorBody: "error",
 		},
 		{
-			scenario: 			"Wrong format email",
-			inputRequest: 		&models.User{Email: "hcl"},
-			expectedErrorBody: `"email was wrong"`,		
+			scenario:          "Wrong format email",
+			inputRequest:      &models.User{Email: "hcl"},
+			expectedErrorBody: `"email was wrong"`,
 		},
 		{
 			scenario:          "Empty request body",
-			expectedErrorBody: `"render: unable to automatically decode the request content type"`,
+			inputRequest:      &models.User{Email: ""},
+			expectedErrorBody: `"email is a required field"`,
 		},
 	}
 
 	for _, tc := range testCase {
 		t.Run(tc.scenario, func(t *testing.T) {
 			mockRepo := new(MockRepository)
-			if tc.inputRequest != nil{
+			if tc.inputRequest != nil {
 				if tc.scenario != "Failure" {
 					mockRepo.On("AddUser").Return(nil)
-				}else{
+				} else {
 					mockRepo.On("AddUser").Return(errors.New("Any error"))
 				}
 			}
 			var (
-				re       repo.UserRepoInter = mockRepo
-				services ser.UserService    = ser.NewUserService(re)
+				repoUser     repo.UserRepoInter = mockRepo
+				servicesUser ser.UserService    = ser.NewUserService(repoUser)
 			)
 			var w *httptest.ResponseRecorder
-			if tc.inputRequest != nil {
-				value := map[string]string{"email": tc.inputRequest.Email}
-				jsonValue, _ := json.Marshal(value)
-				req, err := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonValue))
-				if err != nil {
-					t.Fatal(err)
-				}
-				req.Header.Set("Content-Type", "application/json")
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(services).CreateUser)
-				handler.ServeHTTP(w, req)
-			} else {
-				req, err := http.NewRequest("POST", "/users", nil)
-
-				if err != nil {
-					t.Fatal(err)
-				}
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(services).CreateUser)
-				handler.ServeHTTP(w, req)
+			value := map[string]string{"email": tc.inputRequest.Email}
+			jsonValue, _ := json.Marshal(value)
+			req, err := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonValue))
+			if err != nil {
+				t.Fatal(err)
 			}
+			req.Header.Set("Content-Type", "application/json")
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewUserControl(servicesUser).CreateUser)
+			handler.ServeHTTP(w, req)
 			if tc.scenario == "Success" {
 				assert.Equal(t, 200, w.Result().StatusCode)
 			} else if tc.scenario == "Failure" {
 				assert.Equal(t, 500, w.Result().StatusCode)
-			} else if tc.scenario=="Wrong format email"{
+			} else if tc.scenario == "Wrong format email" {
 				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
-			}else {
+			} else {
 				body, _ := ioutil.ReadAll(w.Result().Body)
 				assert.Equal(t, tc.expectedErrorBody, string(body))
 			}
@@ -209,7 +175,7 @@ func TestCreateNewUserController(t *testing.T) {
 	}
 }
 func TestDeleteUserController(t *testing.T) {
-	CreateConnection()
+	db.Initialize()
 	//given
 	testCase := []struct {
 		scenario          string
@@ -218,21 +184,22 @@ func TestDeleteUserController(t *testing.T) {
 	}{
 		{
 			scenario:          "Success",
-			inputRequest:      &models.User{Email: "hcl2@gmail.com"},
+			inputRequest:      &models.User{Email: "hcl@gmail.com"},
 			expectedErrorBody: "",
 		},
 		{
 			scenario:          "Failure",
-			inputRequest:      &models.User{Email: "hcl2@gmail.com"},
+			inputRequest:      &models.User{Email: "hcl@gmail.com"},
 			expectedErrorBody: `"error"`,
 		},
 		{
 			scenario:          "Wrong format email",
-			inputRequest:      &models.User{Email: "hcl2"},
+			inputRequest:      &models.User{Email: "hcl"},
 			expectedErrorBody: `"email was wrong"`,
 		},
 		{
 			scenario:          "Empty request body",
+			inputRequest:      &models.User{Email: ""},
 			expectedErrorBody: `"email was wrong"`,
 		},
 	}
@@ -240,48 +207,37 @@ func TestDeleteUserController(t *testing.T) {
 	for _, tc := range testCase {
 		t.Run(tc.scenario, func(t *testing.T) {
 			mockRepo := new(MockRepository)
-			if tc.inputRequest !=nil{
-				if tc.scenario != "Failure"{
+			if tc.inputRequest != nil {
+				if tc.scenario != "Failure" {
 					mockRepo.On("DeleteUser").Return(nil)
-				}else{
+				} else {
 					mockRepo.On("DeleteUser").Return(errors.New("error"))
 				}
 			}
-
 			var (
-				re       repo.UserRepoInter = mockRepo
-				services ser.UserService    = ser.NewUserService(re)
+				repoUser     repo.UserRepoInter = mockRepo
+				servicesUser ser.UserService    = ser.NewUserService(repoUser)
 			)
 			var w *httptest.ResponseRecorder
-			if tc.inputRequest != nil {		
-				req, err := http.NewRequest("DELETE", "/users/delete", nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				q := req.URL.Query()
-				q.Add("id", tc.inputRequest.Email)
-				req.URL.RawQuery = q.Encode()
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(services).DeleteUser)
-				handler.ServeHTTP(w, req)
-			}else{
-				req, err := http.NewRequest("DELETE", "/users/delete", nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(services).DeleteUser)
-				handler.ServeHTTP(w, req)
+			req, err := http.NewRequest("DELETE", "/users/delete", nil)
+			if err != nil {
+				t.Fatal(err)
 			}
+			q := req.URL.Query()
+			q.Add("id", tc.inputRequest.Email)
+			req.URL.RawQuery = q.Encode()
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewUserControl(servicesUser).DeleteUser)
+			handler.ServeHTTP(w, req)
 			if tc.scenario == "Success" {
 				assert.Equal(t, 200, w.Result().StatusCode)
 			} else if tc.scenario == "Wrong format email" {
 				assert.Equal(t, 500, w.Result().StatusCode)
 				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
-			}else if tc.scenario =="Failure"{
+			} else if tc.scenario == "Failure" {
 				assert.Equal(t, 500, w.Result().StatusCode)
 				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
-			}else{
+			} else {
 				assert.Equal(t, 500, w.Result().StatusCode)
 				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
 			}
@@ -289,9 +245,8 @@ func TestDeleteUserController(t *testing.T) {
 	}
 }
 func TestGetUserController(t *testing.T) {
-	CreateConnection()
 	//given
-	user := models.User{Email: "len"}
+	user := models.User{Email: "hcl@gmail.com"}
 	testCase := []struct {
 		scenario          string
 		inputRequest      *models.User
@@ -299,21 +254,22 @@ func TestGetUserController(t *testing.T) {
 	}{
 		{
 			scenario:          "Success",
-			inputRequest:      &models.User{Email: "hcl2@gmail.com"},
+			inputRequest:      &models.User{Email: "hcl@gmail.com"},
 			expectedErrorBody: "",
 		},
 		{
 			scenario:          "Failure",
-			inputRequest:      &models.User{Email: "hcl2@gmail.com"},
+			inputRequest:      &models.User{Email: "hcl@gmail.com"},
 			expectedErrorBody: `"error"`,
 		},
 		{
 			scenario:          "Wrong format email",
-			inputRequest:      &models.User{Email: "hcl2"},
+			inputRequest:      &models.User{Email: "hcl"},
 			expectedErrorBody: `"email was wrong"`,
 		},
 		{
 			scenario:          "Empty request body",
+			inputRequest:      &models.User{Email: ""},
 			expectedErrorBody: `"email was wrong"`,
 		},
 	}
@@ -321,51 +277,44 @@ func TestGetUserController(t *testing.T) {
 	for _, tc := range testCase {
 		t.Run(tc.scenario, func(t *testing.T) {
 			mockRepo := new(MockRepository)
-			if tc.inputRequest !=nil{
-				if tc.scenario != "Failure"{
-					mockRepo.On("GetUserByEmail").Return(user,nil)
-				}else{
-					mockRepo.On("GetUserByEmail").Return(user,errors.New("error"))
+			if tc.inputRequest != nil {
+				if tc.scenario != "Failure" {
+					mockRepo.On("GetUserByEmail").Return(user, nil)
+				} else {
+					mockRepo.On("GetUserByEmail").Return(user, errors.New("error"))
 				}
 			}
 			var (
-				re       repo.UserRepoInter = mockRepo
-				services ser.UserService    = ser.NewUserService(re)
+				repoUser     repo.UserRepoInter = mockRepo
+				servicesUser ser.UserService    = ser.NewUserService(repoUser)
 			)
 			var w *httptest.ResponseRecorder
-			if tc.inputRequest != nil {
-				req, err := http.NewRequest("GET", "/users/find", nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				q := req.URL.Query()
-				q.Add("id", tc.inputRequest.Email)
-				req.URL.RawQuery = q.Encode()
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(services).GetUser)
-				handler.ServeHTTP(w, req)
-			}else{
-				req, err := http.NewRequest("GET", "/users/find", nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewUserControl(services).GetUser)
-				handler.ServeHTTP(w, req)
+			req, err := http.NewRequest("GET", "/users/find", nil)
+			if err != nil {
+				t.Fatal(err)
 			}
+			q := req.URL.Query()
+			q.Add("id", tc.inputRequest.Email)
+			req.URL.RawQuery = q.Encode()
+			w = httptest.NewRecorder()
+			handler := http.HandlerFunc(contr.NewUserControl(servicesUser).GetUser)
+			handler.ServeHTTP(w, req)
+			var Body = &models.User{}
+			json.Unmarshal(w.Body.Bytes(),&Body)
+			// json.NewDecoder(io.Reader(w.Body)).Decode(&x)
 			if tc.scenario == "Success" {
 				assert.Equal(t, 200, w.Result().StatusCode)
+				assert.Equal(t, tc.inputRequest.Email, Body.Email)
 			} else if tc.scenario == "Wrong format email" {
 				assert.Equal(t, 500, w.Result().StatusCode)
 				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
-			}else if tc.scenario =="Failure"{
+			} else if tc.scenario == "Failure" {
 				assert.Equal(t, 500, w.Result().StatusCode)
 				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
-			}else{
+			} else {
 				assert.Equal(t, 500, w.Result().StatusCode)
 				assert.Equal(t, tc.expectedErrorBody, w.Body.String())
 			}
 		})
 	}
 }
-//-------------------------------------------------------------------------------------

@@ -103,7 +103,6 @@ func (*controller)GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (*controller)DeleteUser(w http.ResponseWriter, r *http.Request) {
-	// email := r.Context().Value(UserEmailKey).(string)
 	x,_ := db.Conn.Begin()
 	DBInstance.Conn = x
 	email := r.URL.Query().Get("id")
@@ -113,7 +112,6 @@ func (*controller)DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	err := userServices.DeleteUser(DBInstance, email)
 	if err != nil {
-		fmt.Println("?")
 		if err == db.ErrNoMatch {
 			r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "No any user match")
 		}else{

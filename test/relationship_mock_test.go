@@ -95,31 +95,26 @@ func TestGetListRelationship(t *testing.T){
 			mockRepo := new(MockRepositoryRela)
 			mockRepo.On("GetAllRelationship").Return(tc.mockResponse, tc.mockError)
 			var (
-				re repo.RelationshipInter = mockRepo
-				se ser.RepositoryService = ser.NewRelationshipService(re)
+				repoRelationship repo.RelationshipInter = mockRepo
+				serviceRelationship ser.RepositoryService = ser.NewRelationshipService(repoRelationship)
 			)
 			req, err := http.NewRequest("GET","/relationship",nil)
 			if err !=nil{
 				t.Fatal(err)
 			}
 			w := httptest.NewRecorder()
-			handler := http.HandlerFunc(contr.NewRelationshipControl(se).GetAllRelationships)
+			handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).GetAllRelationships)
 			handler.ServeHTTP(w, req)
 			var Body models.RelationshipList
 			var Body2 r_Response.ResponseRenderError
-			if tc.scenario == "Success"{
-				err = json.Unmarshal([]byte(w.Body.String()), &Body)
-				if err != nil{
-					t.Errorf("something wrong")
-				}
-			}else{
-				err = json.Unmarshal([]byte(w.Body.String()),&Body2)
-			}
+			json.Unmarshal(w.Body.Bytes(), &Body)
+			json.Unmarshal(w.Body.Bytes(),&Body2)
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
 				text := w.Body.String()
 				text = strings.Replace(text, "\n", "", -1)
 				assert.Equal(t, tc.expectedSuccessBody, text)
+				assert.Equal(t, "hcl@gmail.com", Body.Relationships[0].UserEmail)
 			}else{
 				assert.Equal(t, 500, w.Result().StatusCode)
 				assert.Equal(t, tc.expectedErrorBody,Body2.Message)
@@ -129,7 +124,7 @@ func TestGetListRelationship(t *testing.T){
 	}
 }
 func TestMakeFriendController(t *testing.T){
-	CreateConnection()
+	db.Initialize()
 	//given
 	testCases := []struct{
 		scenario string
@@ -180,8 +175,8 @@ func TestMakeFriendController(t *testing.T){
 				}
 			}
 			var (
-				re repo.RelationshipInter = mockRepo
-				se ser.RepositoryService = ser.NewRelationshipService(re)
+				repoRelationship repo.RelationshipInter = mockRepo
+				serviceRelationship ser.RepositoryService = ser.NewRelationshipService(repoRelationship)
 			)
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
@@ -194,9 +189,9 @@ func TestMakeFriendController(t *testing.T){
 				}
 				req.Header.Set("Content-Type","application/json")
 				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(se).MakeFriend)
+				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).MakeFriend)
 				handler.ServeHTTP(w, req)
-				json.Unmarshal([]byte(w.Body.String()),&Body2)
+				json.Unmarshal(w.Body.Bytes(),&Body2)
 			}
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
@@ -258,8 +253,8 @@ func TestFindListFriendController(t *testing.T){
 				}
 			}
 			var (
-				re repo.RelationshipInter = mockRepo
-				se ser.RepositoryService = ser.NewRelationshipService(re)
+				repoRelationship repo.RelationshipInter = mockRepo
+				serviceRelationship ser.RepositoryService = ser.NewRelationshipService(repoRelationship)
 			)
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
@@ -272,9 +267,9 @@ func TestFindListFriendController(t *testing.T){
 				}
 				req.Header.Set("Content-Type","application/json")
 				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(se).FindListFriend)
+				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).FindListFriend)
 				handler.ServeHTTP(w, req)
-				json.Unmarshal([]byte(w.Body.String()),&Body2)
+				json.Unmarshal(w.Body.Bytes(),&Body2)
 			}
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
@@ -345,8 +340,8 @@ func TestFindCommonListFriendController(t *testing.T){
 				}
 			}
 			var (
-				re repo.RelationshipInter = mockRepo
-				se ser.RepositoryService = ser.NewRelationshipService(re)
+				repoRelationship repo.RelationshipInter = mockRepo
+				serviceRelationship ser.RepositoryService = ser.NewRelationshipService(repoRelationship)
 			)
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
@@ -358,9 +353,9 @@ func TestFindCommonListFriendController(t *testing.T){
 				}
 				req.Header.Set("Content-Type","application/json")
 				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(se).FindCommonListFriend)
+				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).FindCommonListFriend)
 				handler.ServeHTTP(w, req)
-				json.Unmarshal([]byte(w.Body.String()),&Body2)
+				json.Unmarshal(w.Body.Bytes(),&Body2)
 			}
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
@@ -374,7 +369,7 @@ func TestFindCommonListFriendController(t *testing.T){
 	}
 }
 func TestBeSubcriberController(t *testing.T){
-	CreateConnection()
+	db.Initialize()
 	//given
 	testCases := []struct{
 		scenario string
@@ -410,8 +405,8 @@ func TestBeSubcriberController(t *testing.T){
 				}
 			}
 			var (
-				re repo.RelationshipInter = mockRepo
-				se ser.RepositoryService = ser.NewRelationshipService(re)
+				repoRelationship repo.RelationshipInter = mockRepo
+				serviceRelationship ser.RepositoryService = ser.NewRelationshipService(repoRelationship)
 			)
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
@@ -423,9 +418,9 @@ func TestBeSubcriberController(t *testing.T){
 				}
 				req.Header.Set("Content-Type","application/json")
 				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(se).BeSubcriber)
+				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).BeSubcriber)
 				handler.ServeHTTP(w, req)
-				json.Unmarshal([]byte(w.Body.String()),&Body2)
+				json.Unmarshal(w.Body.Bytes(),&Body2)
 			}
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
@@ -439,7 +434,7 @@ func TestBeSubcriberController(t *testing.T){
 	}
 }
 func TestToBlockController(t *testing.T){
-	CreateConnection()
+	db.Initialize()
 	//given
 	testCases := []struct{
 		scenario string
@@ -475,8 +470,8 @@ func TestToBlockController(t *testing.T){
 				}
 			}
 			var (
-				re repo.RelationshipInter = mockRepo
-				se ser.RepositoryService = ser.NewRelationshipService(re)
+				repoRelationship repo.RelationshipInter = mockRepo
+				serviceRelationship ser.RepositoryService = ser.NewRelationshipService(repoRelationship)
 			)
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
@@ -488,9 +483,9 @@ func TestToBlockController(t *testing.T){
 				}
 				req.Header.Set("Content-Type","application/json")
 				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(se).ToBLock)
+				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).ToBLock)
 				handler.ServeHTTP(w, req)
-				json.Unmarshal([]byte(w.Body.String()),&Body2)
+				json.Unmarshal(w.Body.Bytes(),&Body2)
 			}
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)
@@ -504,7 +499,6 @@ func TestToBlockController(t *testing.T){
 	}
 }
 func TestRetrieveUpdateController(t *testing.T){
-	CreateConnection()
 	//given
 	testCases := []struct{
 		scenario string
@@ -540,8 +534,8 @@ func TestRetrieveUpdateController(t *testing.T){
 				}
 			}
 			var (
-				re repo.RelationshipInter = mockRepo
-				se ser.RepositoryService = ser.NewRelationshipService(re)
+				repoRelationship repo.RelationshipInter = mockRepo
+				serviceRelationship ser.RepositoryService = ser.NewRelationshipService(repoRelationship)
 			)
 			var Body2 r_Response.ResponseRenderError
 			var w *httptest.ResponseRecorder
@@ -553,9 +547,9 @@ func TestRetrieveUpdateController(t *testing.T){
 				}
 				req.Header.Set("Content-Type","application/json")
 				w = httptest.NewRecorder()
-				handler := http.HandlerFunc(contr.NewRelationshipControl(se).RetrieveUpdate)
+				handler := http.HandlerFunc(contr.NewRelationshipControl(serviceRelationship).RetrieveUpdate)
 				handler.ServeHTTP(w, req)
-				json.Unmarshal([]byte(w.Body.String()),&Body2)
+				json.Unmarshal(w.Body.Bytes(),&Body2)
 			}
 			if tc.scenario == "Success"{
 				assert.Equal(t, 200, w.Result().StatusCode)

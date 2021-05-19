@@ -36,3 +36,6 @@ func Initialize2 () (Database, error) {
 	log.Println("Database connection established")
 	return db, nil
 }
+func Initialize () () {
+	Conn, Err = sql.Open("postgres", "user=postgres password=postgres dbname=social_network sslmode=disable")
+}
