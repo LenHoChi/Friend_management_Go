@@ -4,10 +4,14 @@ import (
 	"Friend_management/db"
 	"Friend_management/models"
 	r_Response "Friend_management/models/response"
-	"database/sql"
+	mol "Friend_management/mymodels"
+	"context"
+	// "database/sql"
 	"errors"
 	"regexp"
 	"strings"
+
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 type repoRelationship struct{
 
@@ -27,33 +31,22 @@ type RelationshipInter interface{
 }
 func (r *repoRelationship)GetAllRelationship(database db.Database) (*models.RelationshipList, error) {
 	list := &models.RelationshipList{}
-
-	rows, errFind := database.Conn.Query("SELECT * FROM relationship")
-	if errFind != nil {
-		return list, errFind
+	rows, err := mol.Relationships().All(context.Background(), database.Conn)
+	if err != nil {
+		return list, err
 	}
-	for rows.Next() {
-		var relationship models.Relationship
-		errScan := rows.Scan(&relationship.UserEmail, &relationship.FriendEmail, &relationship.AreFriend, &relationship.IsSubcriber, &relationship.IsBlock)
-		if errScan != nil {
-			return list, errScan
-		}
-		list.Relationships = append(list.Relationships, relationship)
+	for _, v := range rows {
+		list.Relationships = append(list.Relationships, models.Relationship{UserEmail: v.UserEmail, FriendEmail:  v.FriendEmail, AreFriend:  v.Arefriends, IsSubcriber:  v.Issubcriber, IsBlock: v.Isblock})
 	}
 	return list, nil
 }
 
 func (r *repoRelationship)FindRelationshipByKey(database db.Database, userEmail string, friendEmail string) (models.Relationship, error) {
-	relationship := models.Relationship{}
-	query := `select * from relationship where user_email=$1 and friend_email=$2`
-	errFind := database.Conn.QueryRow(query, userEmail, friendEmail).Scan(&relationship.UserEmail, &relationship.FriendEmail, &relationship.AreFriend, &relationship.IsSubcriber, &relationship.IsBlock)
-	if errFind != nil {
-		if errFind == sql.ErrNoRows {
-			return relationship, errFind
-		}
-		return relationship, errFind
+	found, err := mol.FindRelationship(context.Background(), database.Conn, userEmail, friendEmail)
+	if err != nil {
+		return models.Relationship{}, err
 	}
-	return relationship, nil
+	return models.Relationship{UserEmail: found.UserEmail,FriendEmail: found.FriendEmail,AreFriend: found.Arefriends,IsSubcriber: found.Issubcriber,IsBlock: found.Isblock}, nil
 }
 func (r *repoRelationship)AddRelationship(database db.Database, userEmail string, friendEmail string) (*r_Response.ResponseSuccess, error) {
 	//check email similar
@@ -68,20 +61,28 @@ func (r *repoRelationship)AddRelationship(database db.Database, userEmail string
 	if errFind == nil {
 		return nil, errors.New("this relationship exists already")
 	}
-	//create new relationship
-	query := `INSERT INTO relationship values ($1, $2, $3, $4, $5)`
-	// database.Conn.QueryRow(query, userEmail, friendEmail, true, false, false)
-	_, errInsert := database.Conn.Exec(query, userEmail, friendEmail, true, false, false)
-	if errInsert != nil {
-		return nil, errors.New("Error: " + errInsert.Error())
+	//------------------------
+	// //--------------------------
+	p := &mol.Relationship{
+		UserEmail: userEmail,
+		FriendEmail: friendEmail,
+		Arefriends: true,
+		Issubcriber: false,
+		Isblock: false,
 	}
-	//---
-	// database.Conn.QueryRow(query, userEmail, friendEmail, true, false, false)
-	_, errInsert2 := database.Conn.Exec(query, friendEmail, userEmail, true, false, false)
-	if errInsert2 != nil {
-		return nil, errors.New("Error: " + errInsert.Error())
+	if err := p.Insert(context.Background(), database.Conn, boil.Infer()); err != nil {
+		return nil, errors.New("Error: "+err.Error())
 	}
-	
+	p2 := &mol.Relationship{
+		UserEmail: friendEmail,
+		FriendEmail: userEmail,
+		Arefriends: true,
+		Issubcriber: false,
+		Isblock: false,
+	}
+	if err := p2.Insert(context.Background(), database.Conn, boil.Infer()); err != nil {
+		return nil, errors.New("Error: "+err.Error())
+	}
 	return &r_Response.ResponseSuccess{Success: true}, nil
 }
 
@@ -157,6 +158,7 @@ func (r *repoRelationship)BeSubcribe(database db.Database, requestor string, tar
 		return nil, errors.New("no users in table")
 	}
 	_, errFindRelationship := r.FindRelationshipByKey(database, requestor, target)
+	//----------------------------------
 	//not exitst-->create new
 	if errFindRelationship != nil {
 		_, errInsert := database.Conn.Exec(queryInsert, requestor, target, false, true, false)
@@ -169,6 +171,24 @@ func (r *repoRelationship)BeSubcribe(database db.Database, requestor string, tar
 			return nil, errUpdate
 		}
 	}
+	//-------------------------------
+	p := &mol.Relationship{
+		UserEmail: requestor,
+		FriendEmail: target,
+		Arefriends: false,
+		Issubcriber: true,
+		Isblock: false,
+	}
+	if err:= p.Insert(context.Background(), database.Conn, boil.Infer()); err != nil {
+		return nil, err
+	}else{
+		found, _ := mol.FindRelationship(context.Background(), database.Conn, requestor, target)
+		found.Issubcriber = true
+		_, err := found.Update(context.Background(), database.Conn, boil.Infer())
+		if err != nil {
+			return nil, err
+		}
+	} 
 	return &r_Response.ResponseSuccess{Success: true}, nil
 }
 

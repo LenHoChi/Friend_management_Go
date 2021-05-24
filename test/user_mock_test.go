@@ -1,4 +1,4 @@
-package test
+ package test
 
 import (
 	contr "Friend_management/controller"

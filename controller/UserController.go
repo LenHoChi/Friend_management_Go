@@ -35,13 +35,14 @@ var (
 	x ser.UserService = ser.NewUserService(y)
 )
 func Users(router chi.Router) {
-	
 	router.Get("/", NewUserControl(x).GetAllUsers)
 	router.Post("/",NewUserControl(x).CreateUser)
 	router.Get("/find", NewUserControl(x).GetUser)
 	router.Delete("/delete", NewUserControl(x).DeleteUser)
 }
 func (*controller)GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	x,_ := db.Conn.Begin()
+	util.DBInstance.Conn = x
 	users, err := userServices.FindAllUser(util.DBInstance)
 	if err != nil {
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError,err.Error())
@@ -78,6 +79,8 @@ func (*controller)CreateUser(w http.ResponseWriter, r *http.Request){
 
 func (*controller)GetUser(w http.ResponseWriter, r *http.Request) {
 	// email := r.Context().Value("emailKey").(string)
+	x,_ := db.Conn.Begin()
+	util.DBInstance.Conn = x
 	email := r.URL.Query().Get("id")
 	if len(email)==0{
 		r_Response.ResponseWithJSON(w, http.StatusInternalServerError, "lack email")

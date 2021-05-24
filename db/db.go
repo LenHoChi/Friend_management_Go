@@ -18,7 +18,9 @@ var ErrNoMatch = fmt.Errorf("no matching record")
 type Database struct {
 	Conn *sql.Tx
 }
-
+type Database2 struct {
+	Conn *sql.DB
+}
 var Conn *sql.DB
 var Err error
 func Initialize2 () (Database, error) {

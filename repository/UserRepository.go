@@ -1,10 +1,17 @@
 package repository
 
 import (
-	"Friend_management/models"
-	"database/sql"
-	"errors"
 	"Friend_management/db"
+	"Friend_management/models"
+	mol "Friend_management/mymodels"
+	"context"
+	"log"
+
+	// "database/sql"
+	// "errors"
+	// "os/user"
+
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 type repo struct{
 }
@@ -19,18 +26,12 @@ type UserRepoInter interface{
 }
 func (r *repo)GetAllUsers(database db.Database) (*models.UserList, error) {
 	list := &models.UserList{}
-
-	rows, err := database.Conn.Query("SELECT * FROM users")
+	rows, err := mol.Users().All(context.Background(),database.Conn)
 	if err != nil {
 		return list, err
 	}
-	for rows.Next() {
-		var user models.User
-		err := rows.Scan(&user.Email)
-		if err != nil {
-			return list, err
-		}
-		list.Users = append(list.Users, user)
+	for _, v := range rows {
+		list.Users = append(list.Users, models.User{Email: v.Email})
 	}
 	return list, nil
 }
@@ -38,42 +39,28 @@ func ClearTable (database db.Database){
 	database.Conn.Query("delete from users")
 }
 func (r *repo)AddUser(database db.Database, user *models.User) error {
-
-	query := `INSERT INTO users (email) VALUES ($1)`
-	_, errFind := r.GetUserByEmail(database, user.Email)
-	if errFind == nil {
-		return errors.New("this email exists already")
+	p := &mol.User{
+		Email: user.Email,
 	}
-	_, err := database.Conn.Exec(query, user.Email)
-	if err != nil {
+	if err := p.Insert(context.Background(), database.Conn, boil.Infer()); err != nil {
 		return err
 	}
 	return nil
 }
 func (r *repo)GetUserByEmail(database db.Database, email string) (models.User, error) {
-	user := models.User{}
-	query := `select * from users where email = $1;`
-
-	err := database.Conn.QueryRow(query, email).Scan(&user.Email)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return user, err
-		}
-		return user, err
+	found, err := mol.FindUser(context.Background(), database.Conn, email)
+	if err != nil{
+		return models.User{}, err
 	}
-	return user, nil
+	return models.User{Email: found.Email}, nil
 }
 
 func (r *repo)DeleteUser(database db.Database, email string) error {
-	if _,err := r.GetUserByEmail(database, email); err!= nil{
-		return errors.New("this user not exists")
+	us, _ := mol.FindUser(context.Background(), database.Conn, email)
+	log.Println(us.Email)
+	_, err := us.Delete(context.Background(), database.Conn)
+	if err != nil{
+		return err
 	}
-	query := `delete from users where email =$1`
-	_, err := database.Conn.Exec(query, email)
-	switch err {
-	case sql.ErrNoRows:
-		return db.ErrNoMatch
-	default:
-		return nil
-	}
+	return nil
 }

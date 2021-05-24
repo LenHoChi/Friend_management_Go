@@ -47,6 +47,8 @@ func NewRelationshipControl(ser ser.RepositoryService) RelationshipControl{
 	return &controllerRelationship{}
 }
 func (*controllerRelationship)GetAllRelationships (w http.ResponseWriter, r *http.Request) {
+	x,_ := db.Conn.Begin()
+	util.DBInstance.Conn = x
 	relationships, err := relationshipService.GetAllRelationship(util.DBInstance)
 	if err != nil {
 		render.Render(w,r,exception.ServerErrorRenderer(err))
@@ -95,6 +97,8 @@ func (*controllerRelationship)MakeFriend(w http.ResponseWriter, r *http.Request)
 }
 //{"email":"1"}
 func (*controllerRelationship)FindListFriend(w http.ResponseWriter, r *http.Request){
+	x,_ := db.Conn.Begin()
+	util.DBInstance.Conn = x
 	Argument := &r_Request.RequestEmail{}
 	if err := render.Bind(r, Argument);err != nil{
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("invalid format")))
@@ -116,6 +120,8 @@ func (*controllerRelationship)FindListFriend(w http.ResponseWriter, r *http.Requ
 }
 // {"friends":["1","2"]}
 func (*controllerRelationship)FindCommonListFriend(w http.ResponseWriter, r *http.Request){
+	x,_ := db.Conn.Begin()
+	util.DBInstance.Conn = x
 	rsFriend := &r_Request.RequestFriendLists{}
 	ls := make([]string,0)
 	if err := render.Bind(r, rsFriend);err != nil{
@@ -202,6 +208,8 @@ func (*controllerRelationship)ToBLock(w http.ResponseWriter, r *http.Request){
 }
 // {"sender":"len1","target":"len2"}
 func (*controllerRelationship)RetrieveUpdate(w http.ResponseWriter, r *http.Request){
+	x,_ := db.Conn.Begin()
+	util.DBInstance.Conn = x
 	Argument := &r_Request.RetrieveUpdate{}
 	if err := render.Bind(r, Argument);err != nil{
 		render.Render(w,r,exception.ServerErrorRenderer(errors.New("invalid format")))
